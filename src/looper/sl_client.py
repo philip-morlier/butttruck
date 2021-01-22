@@ -15,20 +15,24 @@ class SLClient():
 
     def ping(self):
         """"PING Engine
+         /ping s:return_url s:return_path
 
- /ping s:return_url s:return_path
-
- If engine is there, it will respond with to the given URL and PATH
-  with an OSC message with arguments:
-     s:hosturl  s:version  i:loopcount
-"""
+         If engine is there, it will respond with to the given URL and PATH with an OSC message with arguments:
+         s:hosturl  s:version  i:loopcount"""
         self.osc_client.sends_message('/ping', [self.osc_server.url, '/pingrecieved'])
 
     def hit(self, loop_number, command):
         """""/sl/#/hit s:cmdname
-  A single hit only, no press-release action"""
+        A single hit only, no press-release action"""
 
         self.osc_client.sends_message(f'/sl/{loop_number}/hit', command)
+
+    ##################################################################
+    ### Loop commands and parameter gets/sets paths are all prefixed with:
+    ###   /sl/#/   where # is the loop index starting from 0.
+    ### Specifying -1 will apply the command or operation to all loops.
+    ### Specifying -3 will apply the command or operation to the selected loop.
+    ##################################################################
 
     def record(self, loop_number=-3):
         self.hit(loop_number, 'record')
@@ -62,17 +66,174 @@ class SLClient():
 
     def trigger(self, loop_number=-3):
         self.hit(loop_number, 'trigger')
-        # substitute
-        # undo_all
-        # redo_all
-        # mute_on
-        # mute_off
-        # solo
-        # pause
-        # solo_next
-        # solo_prev
-        # record_solo
-        # record_solo_next
-        # record_solo_prev
-        # set_sync_pos
-        # reset_sync_pos
+
+    def substitute(self, loop_number=-3):
+        self.hit(loop_number, 'substitute')
+
+    def undo_all(self, loop_number=-3):
+        self.hit(loop_number, 'undo_all')
+
+    def redo_all(self, loop_number=-3):
+        self.hit(loop_number, 'redo_all')
+
+    def mute_on(self, loop_number=-3):
+        self.hit(loop_number, 'mute_on')
+
+    def mute_off(self, loop_number=-3):
+        self.hit(loop_number, 'mute_off')
+
+    def solo(self, loop_number=-3):
+        self.hit(loop_number, 'solo')
+
+    def pause(self, loop_number=-3):
+        self.hit(loop_number, 'pause')
+
+    def solo_next(self, loop_number=-3):
+        self.hit(loop_number, 'solo_next')
+
+    def solo_prev(self, loop_number=-3):
+        self.hit(loop_number, 'solo_prev')
+
+    def record_solo(self, loop_number=-3):
+        self.hit(loop_number, 'record_solo')
+
+    def record_solo_next(self, loop_number=-3):
+        self.hit(loop_number, 'record_solo_next')
+
+    def record_solo_prev(self, loop_number=-3):
+        self.hit(loop_number, 'record_solo_prev')
+
+    def set_sync_pos(self, loop_number=-3):
+        self.hit(loop_number, 'set_sync_pos')
+
+    def reset_sync_pos(self, loop_number=-3):
+        self.hit(loop_number, 'reset_sync_pos')
+
+    #######################################################
+    # SET PARAMETER VALUES
+    # /sl/#/set  s:control  f:value
+    #   To set a parameter for a loop.
+    #######################################################
+
+    def set_parameter(self, value, loop_number):
+        self.osc_client.sends_message(f'/sl/{loop_number}/set', value)
+
+    def set_rec_thresh(self, value, loop_number=-3):
+        """  rec_thresh  	:: expected range is 0 -> 1"""
+        self.set_parameter(['rec_thresh', value], loop_number)
+
+    def set_feedback(self, value, loop_number=-3):
+        """  feedback    	:: range 0 -> 1"""
+        self.set_parameter(['feedback', value], loop_number)
+
+    def set_dry(self, value, loop_number=-3):
+        """  dry         	:: range 0 -> 1"""
+        self.set_parameter(['dry', value], loop_number)
+
+    def set_wet(self, value, loop_number=-3):
+        """  wet         	:: range 0 -> 1"""
+        self.set_parameter(['wet', value], loop_number)
+
+    def set_input_gain(self, value, loop_number=-3):
+        """  input_gain    :: range 0 -> 1"""
+        self.set_parameter(['input_gain', value], loop_number)
+
+    def set_rate(self, value, loop_number=-3, ):
+        """  rate        	:: range 0.25 -> 4.0"""
+        self.set_parameter(['feedback', value], loop_number)
+
+    def set_scratch_pos(self, value, loop_number=-3):
+        """  scratch_pos  	 :: 0 -> 1 """
+        self.set_parameter(['scratch_pos', value], loop_number)
+
+    def set_delay_trigger(self, value, loop_number=-3):
+        """  delay_trigger  :: any changes"""
+        self.set_parameter(['delay_trigger', value], loop_number)
+
+    def set_quantize(self, value, loop_number=-3):
+        """  quantize       :: 0 = off, 1 = cycle, 2 = 8th, 3 = loop"""
+        self.set_parameter(['quantize', value], loop_number)
+
+    def set_round(self, value, loop_number=-3):
+        """  round          :: 0 = off,  not 0 = on """
+        self.set_parameter(['round', value], loop_number)
+
+    def set_redo_is_tap(self, value, loop_number=-3):
+        """  redo_is_tap    :: 0 = off,  not 0 = on """
+        self.set_parameter(['redo_is_tap', value], loop_number)
+
+    def set_sync(self, value, loop_number=-3):
+        """  sync           :: 0 = off,  not 0 = on """
+        self.set_parameter(['sync', value], loop_number)
+
+    def set_playback_sync(self, value, loop_number=-3):
+        """  playback_sync  :: 0 = off,  not 0 = on """
+        self.set_parameter(['playback_sync', value], loop_number)
+
+    def set_use_rate(self, value, loop_number=-3):
+        """  use_rate       :: 0 = off,  not 0 = on """
+        self.set_parameter(['use_rate', value], loop_number)
+
+    def set_fade_samples(self, value, loop_number=-3):
+        """  fade_samples   :: 0 -> ..."""
+        self.set_parameter(['fade_samples', value], loop_number)
+
+    def set_use_feedback_play(self, value, loop_number=-3):
+        """  use_feedback_play   :: 0 = off,  not 0 = on"""
+        self.set_parameter(['use_feedback_play', value], loop_number)
+
+    def set_use_common_ins(self, value, loop_number=-3):
+        """  use_common_ins   :: 0 = off,  not 0 = on """
+        self.set_parameter(['use_common_ins', value], loop_number)
+
+    def set_use_common_outs(self, value, loop_number=-3):
+        """  use_common_outs   :: 0 = off,  not 0 = on """
+        self.set_parameter(['use_common_outs', value], loop_number)
+
+    def set_relative_sync(self, value, loop_number=-3):
+        """  relative_sync   :: 0 = off, not 0 = on"""
+        self.set_parameter(['relative_sync', value], loop_number)
+
+    def set_use_safety_feedback(self, value, loop_number=-3):
+        """  use_safety_feedback   :: 0 = off, not 0 = on"""
+        self.set_parameter(['use_safety_feedback', value], loop_number)
+
+    def set_pan_1(self, value, loop_number=-3):
+        """  pan_1         	:: range 0 -> 1"""
+        self.set_parameter(['pan_1', value], loop_number)
+
+    def set_pan_2(self, loop_number=-3, args=None):
+        """  pan_2         	:: range 0 -> 1"""
+        self.set_parameter(['pan_2', value], loop_number)
+
+    def set_pan_3(self, value, loop_number=-3):
+        """  pan_3         	:: range 0 -> 1"""
+        self.set_parameter(['pan_3', value], loop_number)
+
+    def set_pan_4(self, value, loop_number=-3):
+        """  pan_4         	:: range 0 -> 1"""
+        self.set_parameter(['pan_4', value], loop_number)
+
+    def set_input_latency(self, value, loop_number=-3):
+        """  input_latency :: range 0 -> ..."""
+        self.set_parameter(['input_latency', value], loop_number)
+
+    def set_output_latency(self, value, loop_number=-3):
+        """  output_latency :: range 0 -> ..."""
+        self.set_parameter(['output_latency', value], loop_number)
+
+    def set_trigger_latency(self, value, loop_number=-3):
+        """  trigger_latency :: range 0 -> ..."""
+        self.set_parameter(['trigger_latency', value], loop_number)
+
+    def set_autoset_latency(self, value, loop_number=-3):
+        """autoset_latency  :: 0 = off, not 0 = on"""
+        self.set_parameter(['autoset_latency', value], loop_number)
+
+    def set_mute_quantized(self, value, loop_number=-3):
+        """  mute_quantized  :: 0 = off, not 0 = on"""
+        self.set_parameter(['mute_quantized', value], loop_number)
+
+    def set_overdub_quantized(self, value, loop_number=-3):
+        """  overdub_quantized :: 0 == off, not 0 = on"""
+        self.set_parameter(['overdub_quantized', value], loop_number)
