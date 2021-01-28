@@ -15,6 +15,7 @@ class OSCClient:
         osc_send(msg, self.client_name)
         osc_process()
 
+#     we need a gets message method
 
 class OSCServer:
 
@@ -278,3 +279,43 @@ class SLClient():
     def set_overdub_quantized(self, value, loop_number=-3):
         """  overdub_quantized :: 0 == off, not 0 = on"""
         self.set_parameter(['overdub_quantized', value], loop_number)
+
+    ###########################################
+    # GET PARAMETER VALUES
+    # /sl/#/get
+    # s:control  s:return_url  s: return_path
+    ###########################################
+
+    """Which returns an OSC message to the given return url and path with the arguments:
+    i: loop_index s: control f: value 
+    Where control is one of the above or: state::"""
+
+    states={-1:'unknown',0:'Off',1:'WaitStart',2 :'Recording',3:'WaitStop',4:'Playing',
+    5:'Overdubbing',6:'Multiplying',7:'Inserting',8:'Replacing',9:'Delay',10:'Muted',
+    11:'Scratching',12:'OneShot',13:'Substitute',14:'Paused',20:'OffMuted'}
+
+
+    def get_parameter(self, value, loop_number):
+        self.osc_client.gets_message(f'/sl/{loop_number}/get', value)
+
+    next_state:: same as state
+
+    loop_len:: in seconds
+    loop_pos:: in seconds
+    cycle_len:: in seconds
+    free_time:: in seconds
+    total_time:: in seconds
+    rate_output::
+    in_peak_meter:: absolute
+
+float
+sample
+value
+0.0 -> 1.0( or higher)
+out_peak_meter:: absolute
+float
+sample
+value
+0.0 -> 1.0( or higher)
+is_soloed:: 1 if soloed, 0 if not
+waiting:: 1 if waiting, 0 if not
