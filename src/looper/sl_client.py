@@ -1,14 +1,46 @@
-class OSCClient():
-    def sends_message(self, message, args=None):
-        pass
+from osc4py3.as_eventloop import *
+from osc4py3 import oscbuildparse
+import logging
 
 
-class OSCServer():
-    def __init__(self):
-        self.url = None
+class OSCClient:
+    def __init__(self, host='127.0.0.1', port=9951, client_name='butttruck'):
+        self.sl_host = host
+        self.sl_port = port
+        self.client_name = client_name
+        osc_udp_client(self.sl_host, self.sl_port, client_name)
+
+    def sends_message(self, message, args=None, type=None):
+        msg = oscbuildparse.OSCMessage(message, type, args)
+        osc_send(msg, self.client_name)
+        osc_process()
 
 
-class SLClient():
+class OSCServer:
+
+    def __init__(self, host='127.0.0.1', port=9952, debug=False):
+        self.host = host
+        self.port = port
+        self.url = self.host + ':' + str(self.port)
+        self.debug = debug
+        self.start()
+
+    def start(self):
+        if self.debug:
+            logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            logger = logging.getLogger("osc")
+            logger.setLevel(logging.DEBUG)
+            osc_startup(logger=logger)
+        else:
+            osc_startup()
+        osc_udp_server(self.host, self.port, "osc_server")
+        self._register_handlers()
+
+    def register_handler(self, address, function):
+        osc_method(address, function)
+
+
+class SLClient:
     def __init__(self):
         self.osc_server = OSCServer()
         self.osc_client = OSCClient()
@@ -202,7 +234,7 @@ class SLClient():
         """  pan_1         	:: range 0 -> 1"""
         self.set_parameter(['pan_1', value], loop_number)
 
-    def set_pan_2(self, loop_number=-3, args=None):
+    def set_pan_2(self, value, loop_number=-3):
         """  pan_2         	:: range 0 -> 1"""
         self.set_parameter(['pan_2', value], loop_number)
 
