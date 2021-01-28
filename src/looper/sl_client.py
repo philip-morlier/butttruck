@@ -319,3 +319,31 @@ value
 0.0 -> 1.0( or higher)
 is_soloed:: 1 if soloed, 0 if not
 waiting:: 1 if waiting, 0 if not
+
+    ###########################
+    ###
+    ### SAVE/LOAD
+    ###
+    ###########################
+
+    def load_loop(self, loop_number, file):
+        """/sl/#/load_loop   s:filename  s:return_url  s:error_path
+        loads a given filename into loop, may return error to error_path"""
+        self.osc_client.sends_message(f'/sl/{loop_number}/load_loop', args=[file, self.osc_server.url, '/load_loop_error'])
+
+    def save_loop(self, loop_number, file, format='wav', endian='big'):
+        """/sl/#/save_loop   s:filename  s:format  s:endian  s:return_url  s:error_path
+        saves current loop to given filename, may return error to error_path
+        format and endian currently ignored, always uses 32 bit IEEE float WAV"""
+        self.osc_client.sends_message(f'/sl/{loop_number}/save_loop', args=[file, format, endian self.osc_server.url, '/save_loop_error'])
+
+
+    def save_session(self, file):
+        """/save_session   s:filename  s:return_url  s:error_path
+        saves current session description to filename.""""
+        self.osc_client.sends_message('/save_session', args=[file, self.osc_server.url, '/save_session_error'])
+
+    def load_session(self, file):
+        """/load_session   s:filename  s:return_url  s:error_path
+        loads and replaces the current session from filename."""
+        self.osc_client.sends_message('/load_session', args=[file, self.osc_server.url, '/load_session_error'])
