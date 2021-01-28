@@ -36,11 +36,20 @@ class OSCServer:
         osc_udp_server(self.host, self.port, "osc_server")
         self._register_handlers()
 
+    def _register_handlers(self):
+        osc_method("/pingrecieved", self.ping_handler)
+
     def register_handler(self, address, function):
         osc_method(address, function)
 
+    def ping_handler(self, s, x, y):
+        print('ping')
+        print(s)
+        print(x)
+        print(y)
 
-class SLClient:
+
+class SLClient():
     def __init__(self):
         self.osc_server = OSCServer()
         self.osc_client = OSCClient()
