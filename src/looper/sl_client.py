@@ -347,3 +347,106 @@ waiting:: 1 if waiting, 0 if not
         """/load_session   s:filename  s:return_url  s:error_path
         loads and replaces the current session from filename."""
         self.osc_client.sends_message('/load_session', args=[file, self.osc_server.url, '/load_session_error'])
+
+    ###########################
+    ###
+    ### GLOBAL PARAMETERS
+    ###
+    ###########################
+
+    def _set_global_parameter(self, parameter, value):
+        """/set  s:param  f:value"""
+        self.osc_client.sends_message('/set', type=',sf', args=[parameter, float(value)])
+
+    def _get_global_parameter(self, parameter, return_url, return_path):
+        """ /get  s:param  s:return_url  s:retpath"""
+        self.osc_client.sends_message('/get', type=',sss', args=[parameter, return_url, return_path])
+
+    def get_tempo(self):
+        self._get_global_parameter('tempo', self.osc_server.url, '/global/tempo')
+
+    def set_tempo(self, tempo):
+        self._set_global_parameter('tempo', tempo)
+
+    def get_eighth_per_cycle(self):
+        self._get_global_parameter('eighth_per_cycle', self.osc_server.url, '/global/eighth_per_cycle')
+
+    def set_eighth_per_cycle(self, eighth_per_cycle):
+        self._set_global_parameter('eighth_per_cycle', eighth_per_cycle)
+
+    def get_dry(self):
+        self._get_global_parameter('dry', self.osc_server.url, '/global/dry')
+
+    def set_dry(self, dry):
+        """dry         	:: range 0 -> 1 affects common input passthru"""
+        self._set_global_parameter('dry', dry)
+
+    def get_wet(self):
+        self._get_global_parameter('wet', self.osc_server.url, '/global/wet')
+
+    def set_wet(self, wet):
+        """ wet         	:: range 0 -> 1  affects common output level"""
+        self._set_global_parameter('wet', wet)
+
+    def get_input_gain(self):
+        self._get_global_parameter('input_gain', self.osc_server.url, '/global/input_gain')
+
+    def set_input_gain(self, input_gain):
+        """input_gain    :: range 0 -> 1  affects common input gain"""
+        self._set_global_parameter('input_gain', input_gain)
+
+    def get_sync_source(self):
+        self._get_global_parameter('sync_source', self.osc_server.url, '/global/sync_source')
+
+    def set_sync_source(self, sync_source):
+        """sync_source  :: -3 = internal,  -2 = midi, -1 = jack, 0 = none, # > 0 = loop number (1 indexed)"""
+        self._set_global_parameter('sync_source', sync_source)
+
+    def get_tap_tempo(self):
+        self._get_global_parameter('tap_tempo', self.osc_server.url, '/global/tap_tempo')
+
+    def set_tap_tempo(self, tap_tempo):
+        """tap_tempo :: any changes"""
+        self._set_global_parameter('tap_tempo', tap_tempo)
+
+    def get_save_loop(self):
+        self._get_global_parameter('save_loop', self.osc_server.url, '/global/save_loop')
+
+    def set_save_loop(self, save_loop):
+        """save_loop :: any change triggers quick save, be careful"""
+        self._set_global_parameter('save_loop', save_loop)
+
+    def get_select_next_loop(self):
+        self._get_global_parameter('select_next_loop', self.osc_server.url, '/global/select_next_loop')
+
+    def set_select_next_loop(self, select_next_loop):
+        """select_next_loop  :: any changes"""
+        self._set_global_parameter('select_next_loop', select_next_loop)
+
+    def get_select_prev_loop(self):
+        self._get_global_parameter('select_prev_loop', self.osc_server.url, '/global/select_prev_loop')
+
+    def set_select_prev_loop(self, select_prev_loop):
+        """select_prev_loop  :: any changes"""
+        self._set_global_parameter('select_prev_loop', select_prev_loop)
+
+    def get_select_all_loops(self):
+        self._get_global_parameter('select_all_loops', self.osc_server.url, '/global/select_all_loops')
+
+    def set_select_all_loops(self, select_all_loops):
+        """select_all_loops   :: any changes"""
+        self._set_global_parameter('select_all_loops', select_all_loops)
+
+    def get_selected_loop_num(self):
+        self._get_global_parameter('selected_loop_num', self.osc_server.url, '/global/selected_loop_num')
+
+    def set_selected_loop_num(self, loop_num):
+        """selected_loop_num   :: -1 = all, 0->N selects loop instances (first loop is 0, etc)"""
+        self._set_global_parameter('selected_loop_num', loop_num)
+
+    def get_output_midi_clock(self):
+        self._get_global_parameter('output_midi_clock', self.osc_server.url, '/global/output_midi_clock')
+
+    def set_output_midi_clock(self, output_midi_clock):
+        """output_midi_clock :: 0.0 = no, 1.0 = yes"""
+        self._set_global_parameter('output_midi_clock', output_midi_clock)
