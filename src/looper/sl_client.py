@@ -464,3 +464,75 @@ class SLClient:
     def set_output_midi_clock(self, output_midi_clock):
         """output_midi_clock :: 0.0 = no, 1.0 = yes"""
         self._set_global_parameter('output_midi_clock', output_midi_clock)
+
+    ###############################
+    ###
+    ### LOOP ADD/REMOVE
+    ###
+    ###############################
+
+    def loop_add(self, channels=2, length=60):
+        """/loop_add  i:#channels  f:min_length_seconds
+        adds a new loop with # channels and a minimum loop memory"""
+        self.osc_client.sends_message('/loop_add', type=',if', args=[channels, length])
+
+    def loop_del(self, index):
+        """/loop_del  i:loopindex
+        a value of -1 for loopindex removes last loop, and is the only
+        value currently recommended."""
+        self.osc_client.sends_message('/loop_del', type=',i', args=[index])
+
+
+    ###############################
+    ###
+    ### SHUTDOWN
+    ###
+    ###############################
+
+    def quit(self):
+        """/quit
+        shutdown engine"""
+        self.osc_client.sends_message('/quit')
+
+    ###############################
+    ###
+    ### REGISTER FOR CONTROL CHANGES
+    ###
+    ### The following messages register and unregister from update events
+    ### which will be sent the returl and retpath specified.  The update OSC message
+    ### has the following parameters:
+    ###     i:loop#  s:ctrl  f:control_value
+    ###
+    ###############################
+
+    def register_update(self, control, return_url, return_path, loop_number=-3):
+        """/sl/#/register_update  s:ctrl s:returl s:retpath"""
+        self.osc_client.sends_message(f'/sl/{loop_number}/register_update', [control, return_url, return_path])
+
+    def unregister_update(self, control, return_url, return_path, loop_number=-3):
+        """/sl/#/unregister_update  s:ctrl s:returl s:retpath"""
+        self.osc_client.sends_message(f'/sl/{loop_number}/register_update', [control, return_url, return_path])
+
+    def register_auto_update(self, control, return_url, return_path, loop_number=-3):
+        """/sl/#/register_auto_update  s:ctrl i:ms_interval s:returl s:retpath"""
+        self.osc_client.sends_message(f'/sl/{loop_number}/register_update', [control, return_url, return_path])
+
+    def unregister_auto_update(self, control, return_url, return_path, loop_number=-3):
+        """/sl/#/unregister_auto_update  s:ctrl s:returl s:retpath"""
+        self.osc_client.sends_message(f'/sl/{loop_number}/register_update', [control, return_url, return_path])
+
+    def register_global_update(self, control, return_url, return_path):
+        """/register_update  s:ctrl s:returl s:retpath"""
+        self.osc_client.sends_message('/register_update', [control, return_url, return_path])
+
+    def unregister_global_update(self, control, return_url, return_path):
+        """/unregister_update  s:ctrl s:returl s:retpath"""
+        self.osc_client.sends_message('/unregister_update', [control, return_url, return_path])
+
+    def register_global_auto_update(self, control, return_url, return_path):
+        """ /register_auto_update  s:ctrl i:ms_interval s:returl s:retpath"""
+        self.osc_client.sends_message('register_auto_update', [control, return_url, return_path])
+
+    def unregister_global_auto_update(self, control, return_url, return_path):
+        """/unregister_auto_update  s:ctrl s:returl s:retpath"""
+        self.osc_client.sends_message('/unregister_auto_update', [control, return_url, return_path])
