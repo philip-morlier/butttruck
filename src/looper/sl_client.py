@@ -316,7 +316,7 @@ class SLClient:
         self.get_parameter('loop_len', loop_number=-3)
 
     def get_loop_pos(self, loop_number=-3):
-        self.get_parameter('loop_pos', loop_nymber=-3)
+        self.get_parameter('loop_pos', loop_number=-3)
 
     def get_cycle_len(self, loop_number=-3):
         self.get_parameter('cycle_len', loop_number=-3)
@@ -525,13 +525,13 @@ class SLClient:
         """/sl/#/unregister_update  s:ctrl s:returl s:retpath"""
         self.osc_client.send_message(f'/sl/{loop_number}/register_update', [control, return_url, return_path])
 
-    def register_auto_update(self, control, return_url, return_path, loop_number=-3):
+    def register_auto_update(self, control, return_url, return_path, loop_number=-3, interval=10):
         """/sl/#/register_auto_update  s:ctrl i:ms_interval s:returl s:retpath"""
-        self.osc_client.send_message(f'/sl/{loop_number}/register_update', [control, return_url, return_path])
+        self.osc_client.send_message(f'/sl/{loop_number}/register_auto_update', [control, interval, return_url, return_path])
 
     def unregister_auto_update(self, control, return_url, return_path, loop_number=-3):
         """/sl/#/unregister_auto_update  s:ctrl s:returl s:retpath"""
-        self.osc_client.send_message(f'/sl/{loop_number}/register_update', [control, return_url, return_path])
+        self.osc_client.send_message(f'/sl/{loop_number}/register_auto_update', [control, return_url, return_path])
 
     def register_global_update(self, control, return_url, return_path):
         """/register_update  s:ctrl s:returl s:retpath"""
