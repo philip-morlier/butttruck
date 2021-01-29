@@ -1,3 +1,6 @@
+import time
+from threading import Thread
+
 from osc4py3.as_eventloop import *
 from osc4py3 import oscbuildparse
 import logging
@@ -8,12 +11,20 @@ class OSCClient:
         self.sl_host = host
         self.sl_port = port
         self.client_name = client_name
-        osc_udp_client(self.sl_host, self.sl_port, client_name)
+        self.thread = Thread(target=self.run, daemon=True)
+        self.thread.start()
+
+    # osc4py3 as_allthreads is expensive but may work better than this
+    def run(self):
+        osc_udp_client(self.sl_host, self.sl_port, self.client_name)
+        while True:
+            time.sleep(0.05)
+            osc_process()
 
     def sends_message(self, message, args=None, type=None):
         msg = oscbuildparse.OSCMessage(message, type, args)
         osc_send(msg, self.client_name)
-        osc_process()
+
 
 #     we need a gets message method
 
@@ -39,18 +50,19 @@ class OSCServer:
 
     def _register_handlers(self):
         osc_method("/pingrecieved", self.ping_handler)
+        osc_method("/global/*", self.global_parameter_hander)
 
     def register_handler(self, address, function):
         osc_method(address, function)
 
-    def ping_handler(self, s, x, y):
-        print('ping')
-        print(s)
-        print(x)
-        print(y)
+    def global_parameter_hander(self, loop, param, value):
+        print(f'Global parameter {param} is {value}')
+
+    def ping_handler(self, address, version, loop_count):
+        print(f'Sooperlooper {version} is listening at: {address}. {loop_count} loops in progress')
 
 
-class SLClient():
+class SLClient:
     def __init__(self):
         self.osc_server = OSCServer()
         self.osc_client = OSCClient()
@@ -67,7 +79,7 @@ class SLClient():
         """""/sl/#/hit s:cmdname
         A single hit only, no press-release action"""
 
-        self.osc_client.sends_message(f'/sl/{loop_number}/hit', command)
+        self.osc_client.sends_message(f'/sl/{loop_number}/hit', [command])
 
     ##################################################################
     ### Loop commands and parameter gets/sets paths are all prefixed with:
@@ -158,7 +170,7 @@ class SLClient():
     #######################################################
 
     def set_parameter(self, value, loop_number):
-        self.osc_client.sends_message(f'/sl/{loop_number}/set', value)
+        self.osc_client.sends_message(f'/sl/{loop_number}/set', [value])
 
     def set_rec_thresh(self, value, loop_number=-3):
         """  rec_thresh  	:: expected range is 0 -> 1"""
@@ -286,9 +298,6 @@ class SLClient():
     # s:control  s:return_url  s: return_path
     ###########################################
 
-    """Which returns an OSC message to the given return url and path with the arguments:
-    i: loop_index s: control f: value 
-    Where control is one of the above or: state::"""
 
     states={-1:'unknown',0:'Off',1:'WaitStart',2 :'Recording',3:'WaitStop',4:'Playing',
     5:'Overdubbing',6:'Multiplying',7:'Inserting',8:'Replacing',9:'Delay',10:'Muted',
@@ -296,29 +305,34 @@ class SLClient():
 
 
     def get_parameter(self, value, loop_number):
-        self.osc_client.gets_message(f'/sl/{loop_number}/get', value)
+        """/sl/#/get s:control  s:return_url  s: return_path
+        Which returns an OSC message to the given return url and path with the arguments:
+        i: loop_index s: control f: value
+        Where control is one of the above or: state::"""
 
-    next_state:: same as state
+        self.osc_client.gets_message(f'/sl/{loop_number}/get', [value])
 
-    loop_len:: in seconds
-    loop_pos:: in seconds
-    cycle_len:: in seconds
-    free_time:: in seconds
-    total_time:: in seconds
-    rate_output::
-    in_peak_meter:: absolute
-
-float
-sample
-value
-0.0 -> 1.0( or higher)
-out_peak_meter:: absolute
-float
-sample
-value
-0.0 -> 1.0( or higher)
-is_soloed:: 1 if soloed, 0 if not
-waiting:: 1 if waiting, 0 if not
+#     next_state:: same as state
+#
+#     loop_len:: in seconds
+#     loop_pos:: in seconds
+#     cycle_len:: in seconds
+#     free_time:: in seconds
+#     total_time:: in seconds
+#     rate_output::
+#     in_peak_meter:: absolute
+#
+# float
+# sample
+# value
+# 0.0 -> 1.0( or higher)
+# out_peak_meter:: absolute
+# float
+# sample
+# value
+# 0.0 -> 1.0( or higher)
+# is_soloed:: 1 if soloed, 0 if not
+# waiting:: 1 if waiting, 0 if not
 
     ###########################
     ###
@@ -335,12 +349,12 @@ waiting:: 1 if waiting, 0 if not
         """/sl/#/save_loop   s:filename  s:format  s:endian  s:return_url  s:error_path
         saves current loop to given filename, may return error to error_path
         format and endian currently ignored, always uses 32 bit IEEE float WAV"""
-        self.osc_client.sends_message(f'/sl/{loop_number}/save_loop', args=[file, format, endian self.osc_server.url, '/save_loop_error'])
+        self.osc_client.sends_message(f'/sl/{loop_number}/save_loop', args=[file, format, endian, self.osc_server.url, '/save_loop_error'])
 
 
     def save_session(self, file):
         """/save_session   s:filename  s:return_url  s:error_path
-        saves current session description to filename.""""
+        saves current session description to filename."""
         self.osc_client.sends_message('/save_session', args=[file, self.osc_server.url, '/save_session_error'])
 
     def load_session(self, file):
