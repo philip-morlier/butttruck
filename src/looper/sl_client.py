@@ -47,11 +47,19 @@ class OSCServer:
         self._register_handlers()
 
     def _register_handlers(self):
-        osc_method("/pingrecieved", self.ping_handler)
-        osc_method("/global/*", self.global_parameter_hander)
+        osc_method('/pingrecieved', self.ping_handler)
+        osc_method('/global/*', self.global_parameter_hander)
+        osc_method('/parameter/*', self.parameter_handler)
+        osc_method('/save_loop_error', self.loop_save_handler)
 
     def register_handler(self, address, function):
         osc_method(address, function)
+
+    def loop_save_handler(self, x, y, z):
+        print(f'Loop save error {x}  {y}  {z}')
+
+    def parameter_handler(self, loop, param, value):
+        print(f'Loop {loop} parameter {param} is {value}')
 
     def global_parameter_hander(self, loop, param, value):
         print(f'Global parameter {param} is {value}')
