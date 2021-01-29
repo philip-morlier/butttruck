@@ -21,12 +21,10 @@ class OSCClient:
             time.sleep(0.05)
             osc_process()
 
-    def sends_message(self, message, args=None, type=None):
+    def send_message(self, message, args=None, type=None):
         msg = oscbuildparse.OSCMessage(message, type, args)
         osc_send(msg, self.client_name)
 
-
-#     we need a gets message method
 
 class OSCServer:
 
@@ -73,13 +71,13 @@ class SLClient:
 
          If engine is there, it will respond with to the given URL and PATH with an OSC message with arguments:
          s:hosturl  s:version  i:loopcount"""
-        self.osc_client.sends_message('/ping', [self.osc_server.url, '/pingrecieved'])
+        self.osc_client.send_message('/ping', [self.osc_server.url, '/pingrecieved'])
 
     def hit(self, loop_number, command):
         """""/sl/#/hit s:cmdname
         A single hit only, no press-release action"""
 
-        self.osc_client.sends_message(f'/sl/{loop_number}/hit', [command])
+        self.osc_client.send_message(f'/sl/{loop_number}/hit', [command])
 
     ##################################################################
     ### Loop commands and parameter gets/sets paths are all prefixed with:
@@ -170,7 +168,7 @@ class SLClient:
     #######################################################
 
     def set_parameter(self, value, loop_number):
-        self.osc_client.sends_message(f'/sl/{loop_number}/set', [value])
+        self.osc_client.send_message(f'/sl/{loop_number}/set', [value])
 
     def set_rec_thresh(self, value, loop_number=-3):
         """  rec_thresh  	:: expected range is 0 -> 1"""
@@ -298,41 +296,55 @@ class SLClient:
     # s:control  s:return_url  s: return_path
     ###########################################
 
+    states = {-1: 'unknown', 0: 'Off', 1: 'WaitStart', 2: 'Recording', 3: 'WaitStop', 4: 'Playing',
+              5: 'Overdubbing', 6: 'Multiplying', 7: 'Inserting', 8: 'Replacing', 9: 'Delay', 10: 'Muted',
+              11: 'Scratching', 12: 'OneShot', 13: 'Substitute', 14: 'Paused', 20: 'OffMuted'}
 
-    states={-1:'unknown',0:'Off',1:'WaitStart',2 :'Recording',3:'WaitStop',4:'Playing',
-    5:'Overdubbing',6:'Multiplying',7:'Inserting',8:'Replacing',9:'Delay',10:'Muted',
-    11:'Scratching',12:'OneShot',13:'Substitute',14:'Paused',20:'OffMuted'}
-
-
-    def get_parameter(self, value, loop_number):
+    def get_parameter(self, control, loop_number):
         """/sl/#/get s:control  s:return_url  s: return_path
         Which returns an OSC message to the given return url and path with the arguments:
         i: loop_index s: control f: value
         Where control is one of the above or: state::"""
 
-        self.osc_client.gets_message(f'/sl/{loop_number}/get', [value])
+        self.osc_client.send_message(f'/sl/{loop_number}/get', [control, self.osc_server.url,
+                                                                f'/parameter/{loop_number}/{control}'])
 
-#     next_state:: same as state
-#
-#     loop_len:: in seconds
-#     loop_pos:: in seconds
-#     cycle_len:: in seconds
-#     free_time:: in seconds
-#     total_time:: in seconds
-#     rate_output::
-#     in_peak_meter:: absolute
-#
-# float
-# sample
-# value
-# 0.0 -> 1.0( or higher)
-# out_peak_meter:: absolute
-# float
-# sample
-# value
-# 0.0 -> 1.0( or higher)
-# is_soloed:: 1 if soloed, 0 if not
-# waiting:: 1 if waiting, 0 if not
+    def get_next_state(self, loop_number=-3):
+        self.get_parameter('next_state', loop_number)
+
+    def get_loop_len(self, loop_number=-3):
+        self.get_parameter('loop_len', loop_number=-3)
+
+    def get_loop_pos(self, loop_number=-3):
+        self.get_parameter('loop_pos', loop_nymber=-3)
+
+    def get_cycle_len(self, loop_number=-3):
+        self.get_parameter('cycle_len', loop_number=-3)
+
+    def get_free_time(self, loop_number=-3):
+        self.get_parameter('free_time', loop_number=-3)
+
+    def get_total_time(self, loop_number=-3):
+        self.get_parameter('total_time', loop_number=-3)
+
+    def get_rate_output(self, loop_number=-3):
+        self.get_parameter('rate_output', loop_number=-3)
+
+    def get_in_peak_meter(self, loop_number=-3):
+        """:: absolute float sample value 0.0 -> 1.0 (or higher)"""
+        self.get_parameter('in_peak_meter', loop_number=-3)
+
+    def get_out_peak_meter(self, loop_number=-3):
+        """:: absolute float sample value 0.0 -> 1.0 (or higher)"""
+        self.get_parameter('out_peak_meter', loop_number=-3)
+
+    def get_is_soloed(self, loop_number=-3):
+        """is_soloed:: 1 if soloed, 0 if not"""
+        self.get_parameter('is_soloed', loop_number=-3)
+
+    def get_waiting(self, loop_number=-3):
+        """waiting:: 1 if waiting, 0 if not"""
+        self.get_parameter('waiting', loop_number=-3)
 
     ###########################
     ###
@@ -343,24 +355,25 @@ class SLClient:
     def load_loop(self, loop_number, file):
         """/sl/#/load_loop   s:filename  s:return_url  s:error_path
         loads a given filename into loop, may return error to error_path"""
-        self.osc_client.sends_message(f'/sl/{loop_number}/load_loop', args=[file, self.osc_server.url, '/load_loop_error'])
+        self.osc_client.send_message(f'/sl/{loop_number}/load_loop',
+                                     args=[file, self.osc_server.url, '/load_loop_error'])
 
     def save_loop(self, loop_number, file, format='wav', endian='big'):
         """/sl/#/save_loop   s:filename  s:format  s:endian  s:return_url  s:error_path
         saves current loop to given filename, may return error to error_path
         format and endian currently ignored, always uses 32 bit IEEE float WAV"""
-        self.osc_client.sends_message(f'/sl/{loop_number}/save_loop', args=[file, format, endian, self.osc_server.url, '/save_loop_error'])
-
+        self.osc_client.send_message(f'/sl/{loop_number}/save_loop',
+                                     args=[file, format, endian, self.osc_server.url, '/save_loop_error'])
 
     def save_session(self, file):
         """/save_session   s:filename  s:return_url  s:error_path
         saves current session description to filename."""
-        self.osc_client.sends_message('/save_session', args=[file, self.osc_server.url, '/save_session_error'])
+        self.osc_client.send_message('/save_session', args=[file, self.osc_server.url, '/save_session_error'])
 
     def load_session(self, file):
         """/load_session   s:filename  s:return_url  s:error_path
         loads and replaces the current session from filename."""
-        self.osc_client.sends_message('/load_session', args=[file, self.osc_server.url, '/load_session_error'])
+        self.osc_client.send_message('/load_session', args=[file, self.osc_server.url, '/load_session_error'])
 
     ###########################
     ###
@@ -370,11 +383,11 @@ class SLClient:
 
     def _set_global_parameter(self, parameter, value):
         """/set  s:param  f:value"""
-        self.osc_client.sends_message('/set', type=',sf', args=[parameter, float(value)])
+        self.osc_client.send_message('/set', type=',sf', args=[parameter, float(value)])
 
     def _get_global_parameter(self, parameter, return_url, return_path):
         """ /get  s:param  s:return_url  s:retpath"""
-        self.osc_client.sends_message('/get', type=',sss', args=[parameter, return_url, return_path])
+        self.osc_client.send_message('/get', type=',sss', args=[parameter, return_url, return_path])
 
     def get_tempo(self):
         self._get_global_parameter('tempo', self.osc_server.url, '/global/tempo')
@@ -474,14 +487,13 @@ class SLClient:
     def loop_add(self, channels=2, length=60):
         """/loop_add  i:#channels  f:min_length_seconds
         adds a new loop with # channels and a minimum loop memory"""
-        self.osc_client.sends_message('/loop_add', type=',if', args=[channels, length])
+        self.osc_client.send_message('/loop_add', type=',if', args=[channels, length])
 
     def loop_del(self, index):
         """/loop_del  i:loopindex
         a value of -1 for loopindex removes last loop, and is the only
         value currently recommended."""
-        self.osc_client.sends_message('/loop_del', type=',i', args=[index])
-
+        self.osc_client.send_message('/loop_del', type=',i', args=[index])
 
     ###############################
     ###
@@ -492,7 +504,7 @@ class SLClient:
     def quit(self):
         """/quit
         shutdown engine"""
-        self.osc_client.sends_message('/quit')
+        self.osc_client.send_message('/quit')
 
     ###############################
     ###
@@ -507,32 +519,32 @@ class SLClient:
 
     def register_update(self, control, return_url, return_path, loop_number=-3):
         """/sl/#/register_update  s:ctrl s:returl s:retpath"""
-        self.osc_client.sends_message(f'/sl/{loop_number}/register_update', [control, return_url, return_path])
+        self.osc_client.send_message(f'/sl/{loop_number}/register_update', [control, return_url, return_path])
 
     def unregister_update(self, control, return_url, return_path, loop_number=-3):
         """/sl/#/unregister_update  s:ctrl s:returl s:retpath"""
-        self.osc_client.sends_message(f'/sl/{loop_number}/register_update', [control, return_url, return_path])
+        self.osc_client.send_message(f'/sl/{loop_number}/register_update', [control, return_url, return_path])
 
     def register_auto_update(self, control, return_url, return_path, loop_number=-3):
         """/sl/#/register_auto_update  s:ctrl i:ms_interval s:returl s:retpath"""
-        self.osc_client.sends_message(f'/sl/{loop_number}/register_update', [control, return_url, return_path])
+        self.osc_client.send_message(f'/sl/{loop_number}/register_update', [control, return_url, return_path])
 
     def unregister_auto_update(self, control, return_url, return_path, loop_number=-3):
         """/sl/#/unregister_auto_update  s:ctrl s:returl s:retpath"""
-        self.osc_client.sends_message(f'/sl/{loop_number}/register_update', [control, return_url, return_path])
+        self.osc_client.send_message(f'/sl/{loop_number}/register_update', [control, return_url, return_path])
 
     def register_global_update(self, control, return_url, return_path):
         """/register_update  s:ctrl s:returl s:retpath"""
-        self.osc_client.sends_message('/register_update', [control, return_url, return_path])
+        self.osc_client.send_message('/register_update', [control, return_url, return_path])
 
     def unregister_global_update(self, control, return_url, return_path):
         """/unregister_update  s:ctrl s:returl s:retpath"""
-        self.osc_client.sends_message('/unregister_update', [control, return_url, return_path])
+        self.osc_client.send_message('/unregister_update', [control, return_url, return_path])
 
     def register_global_auto_update(self, control, return_url, return_path):
         """ /register_auto_update  s:ctrl i:ms_interval s:returl s:retpath"""
-        self.osc_client.sends_message('register_auto_update', [control, return_url, return_path])
+        self.osc_client.send_message('register_auto_update', [control, return_url, return_path])
 
     def unregister_global_auto_update(self, control, return_url, return_path):
         """/unregister_auto_update  s:ctrl s:returl s:retpath"""
-        self.osc_client.sends_message('/unregister_auto_update', [control, return_url, return_path])
+        self.osc_client.send_message('/unregister_auto_update', [control, return_url, return_path])
