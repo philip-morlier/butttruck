@@ -1,2 +1,4 @@
 # osc
 osc4py3==1.0.8
+# pika
+pika==1.2.0
