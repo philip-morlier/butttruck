@@ -135,125 +135,155 @@ class SLClient:
     def set_parameter(value, loop_number):
         OSCClient.send_message(f'/sl/{loop_number}/set', [value])
 
-    def set_rec_thresh(self, value, loop_number=-3):
+    @staticmethod
+    def set_rec_thresh(value, loop_number=-3):
         """  rec_thresh  	:: expected range is 0 -> 1"""
-        self.set_parameter(['rec_thresh', value], loop_number)
+        OSCClient.set_parameter(['rec_thresh', value], loop_number)
 
-    def set_feedback(self, value, loop_number=-3):
+    @staticmethod
+    def set_feedback(value, loop_number=-3):
         """  feedback    	:: range 0 -> 1"""
-        self.set_parameter(['feedback', value], loop_number)
+        OSCClient.set_parameter(['feedback', value], loop_number)
 
-    def set_dry(self, value, loop_number=-3):
+    @staticmethod
+    def set_dry(value, loop_number=-3):
         """  dry         	:: range 0 -> 1"""
-        self.set_parameter(['dry', value], loop_number)
+        OSCClient.set_parameter(['dry', value], loop_number)
 
-    def set_wet(self, value, loop_number=-3):
+    @staticmethod
+    def set_wet(value, loop_number=-3):
         """  wet         	:: range 0 -> 1"""
-        self.set_parameter(['wet', value], loop_number)
+        OSCClient.set_parameter(['wet', value], loop_number)
 
-    def set_input_gain(self, value, loop_number=-3):
+    @staticmethod
+    def set_input_gain(value, loop_number=-3):
         """  input_gain    :: range 0 -> 1"""
-        self.set_parameter(['input_gain', value], loop_number)
+        OSCClient.set_parameter(['input_gain', value], loop_number)
 
-    def set_rate(self, value, loop_number=-3, ):
+    @staticmethod
+    def set_rate(value, loop_number=-3, ):
         """  rate        	:: range 0.25 -> 4.0"""
-        self.set_parameter(['feedback', value], loop_number)
+        OSCClient.set_parameter(['feedback', value], loop_number)
 
-    def set_scratch_pos(self, value, loop_number=-3):
+    @staticmethod
+    def set_scratch_pos(value, loop_number=-3):
         """  scratch_pos  	 :: 0 -> 1 """
-        self.set_parameter(['scratch_pos', value], loop_number)
+        OSCClient.set_parameter(['scratch_pos', value], loop_number)
 
-    def set_delay_trigger(self, value, loop_number=-3):
+    @staticmethod
+    def set_delay_trigger(value, loop_number=-3):
         """  delay_trigger  :: any changes"""
-        self.set_parameter(['delay_trigger', value], loop_number)
+        OSCClient.set_parameter(['delay_trigger', value], loop_number)
 
-    def set_quantize(self, value, loop_number=-3):
+    @staticmethod
+    def set_quantize(value, loop_number=-3):
         """  quantize       :: 0 = off, 1 = cycle, 2 = 8th, 3 = loop"""
-        self.set_parameter(['quantize', value], loop_number)
+        OSCClient.set_parameter(['quantize', value], loop_number)
 
-    def set_round(self, value, loop_number=-3):
+    @staticmethod
+    def set_round(value, loop_number=-3):
         """  round          :: 0 = off,  not 0 = on """
-        self.set_parameter(['round', value], loop_number)
+        OSCClient.set_parameter(['round', value], loop_number)
 
-    def set_redo_is_tap(self, value, loop_number=-3):
+    @staticmethod
+    def set_redo_is_tap(value, loop_number=-3):
         """  redo_is_tap    :: 0 = off,  not 0 = on """
-        self.set_parameter(['redo_is_tap', value], loop_number)
+        OSCClient.set_parameter(['redo_is_tap', value], loop_number)
 
-    def set_sync(self, value, loop_number=-3):
+    @staticmethod
+    def set_sync(value, loop_number=-3):
         """  sync           :: 0 = off,  not 0 = on """
-        self.set_parameter(['sync', value], loop_number)
+        OSCClient.set_parameter(['sync', value], loop_number)
 
-    def set_playback_sync(self, value, loop_number=-3):
+    @staticmethod
+    def set_playback_sync(value, loop_number=-3):
         """  playback_sync  :: 0 = off,  not 0 = on """
-        self.set_parameter(['playback_sync', value], loop_number)
+        OSCClient.set_parameter(['playback_sync', value], loop_number)
 
-    def set_use_rate(self, value, loop_number=-3):
+    @staticmethod
+    def set_use_rate(value, loop_number=-3):
         """  use_rate       :: 0 = off,  not 0 = on """
-        self.set_parameter(['use_rate', value], loop_number)
+        OSCClient.set_parameter(['use_rate', value], loop_number)
 
-    def set_fade_samples(self, value, loop_number=-3):
+    @staticmethod
+    def set_fade_samples(value, loop_number=-3):
         """  fade_samples   :: 0 -> ..."""
-        self.set_parameter(['fade_samples', value], loop_number)
+        OSCClient.set_parameter(['fade_samples', value], loop_number)
 
-    def set_use_feedback_play(self, value, loop_number=-3):
+    @staticmethod
+    def set_use_feedback_play(value, loop_number=-3):
         """  use_feedback_play   :: 0 = off,  not 0 = on"""
-        self.set_parameter(['use_feedback_play', value], loop_number)
+        OSCClient.set_parameter(['use_feedback_play', value], loop_number)
 
-    def set_use_common_ins(self, value, loop_number=-3):
+    @staticmethod
+    def set_use_common_ins(value, loop_number=-3):
         """  use_common_ins   :: 0 = off,  not 0 = on """
-        self.set_parameter(['use_common_ins', value], loop_number)
+        OSCClient.set_parameter(['use_common_ins', value], loop_number)
 
-    def set_use_common_outs(self, value, loop_number=-3):
+    @staticmethod
+    def set_use_common_outs(value, loop_number=-3):
         """  use_common_outs   :: 0 = off,  not 0 = on """
-        self.set_parameter(['use_common_outs', value], loop_number)
+        OSCClient.set_parameter(['use_common_outs', value], loop_number)
 
-    def set_relative_sync(self, value, loop_number=-3):
+    @staticmethod
+    def set_relative_sync(value, loop_number=-3):
         """  relative_sync   :: 0 = off, not 0 = on"""
-        self.set_parameter(['relative_sync', value], loop_number)
+        OSCClient.set_parameter(['relative_sync', value], loop_number)
 
-    def set_use_safety_feedback(self, value, loop_number=-3):
+    @staticmethod
+    def set_use_safety_feedback(value, loop_number=-3):
         """  use_safety_feedback   :: 0 = off, not 0 = on"""
-        self.set_parameter(['use_safety_feedback', value], loop_number)
+        OSCClient.set_parameter(['use_safety_feedback', value], loop_number)
 
-    def set_pan_1(self, value, loop_number=-3):
+    @staticmethod
+    def set_pan_1(value, loop_number=-3):
         """  pan_1         	:: range 0 -> 1"""
-        self.set_parameter(['pan_1', value], loop_number)
+        OSCClient.set_parameter(['pan_1', value], loop_number)
 
-    def set_pan_2(self, value, loop_number=-3):
+    @staticmethod
+    def set_pan_2(value, loop_number=-3):
         """  pan_2         	:: range 0 -> 1"""
-        self.set_parameter(['pan_2', value], loop_number)
+        OSCClient.set_parameter(['pan_2', value], loop_number)
 
-    def set_pan_3(self, value, loop_number=-3):
+    @staticmethod
+    def set_pan_3(value, loop_number=-3):
         """  pan_3         	:: range 0 -> 1"""
-        self.set_parameter(['pan_3', value], loop_number)
+        OSCClient.set_parameter(['pan_3', value], loop_number)
 
-    def set_pan_4(self, value, loop_number=-3):
+    @staticmethod
+    def set_pan_4(value, loop_number=-3):
         """  pan_4         	:: range 0 -> 1"""
-        self.set_parameter(['pan_4', value], loop_number)
+        OSCClient.set_parameter(['pan_4', value], loop_number)
 
-    def set_input_latency(self, value, loop_number=-3):
+    @staticmethod
+    def set_input_latency(value, loop_number=-3):
         """  input_latency :: range 0 -> ..."""
-        self.set_parameter(['input_latency', value], loop_number)
+        OSCClient.set_parameter(['input_latency', value], loop_number)
 
-    def set_output_latency(self, value, loop_number=-3):
+    @staticmethod
+    def set_output_latency(value, loop_number=-3):
         """  output_latency :: range 0 -> ..."""
-        self.set_parameter(['output_latency', value], loop_number)
+        OSCClient.set_parameter(['output_latency', value], loop_number)
 
-    def set_trigger_latency(self, value, loop_number=-3):
+    @staticmethod
+    def set_trigger_latency(value, loop_number=-3):
         """  trigger_latency :: range 0 -> ..."""
-        self.set_parameter(['trigger_latency', value], loop_number)
+        OSCClient.set_parameter(['trigger_latency', value], loop_number)
 
-    def set_autoset_latency(self, value, loop_number=-3):
+    @staticmethod
+    def set_autoset_latency(value, loop_number=-3):
         """autoset_latency  :: 0 = off, not 0 = on"""
-        self.set_parameter(['autoset_latency', value], loop_number)
+        OSCClient.set_parameter(['autoset_latency', value], loop_number)
 
-    def set_mute_quantized(self, value, loop_number=-3):
+    @staticmethod
+    def set_mute_quantized(value, loop_number=-3):
         """  mute_quantized  :: 0 = off, not 0 = on"""
-        self.set_parameter(['mute_quantized', value], loop_number)
+        OSCClient.set_parameter(['mute_quantized', value], loop_number)
 
-    def set_overdub_quantized(self, value, loop_number=-3):
+    @staticmethod
+    def set_overdub_quantized(value, loop_number=-3):
         """  overdub_quantized :: 0 == off, not 0 = on"""
-        self.set_parameter(['overdub_quantized', value], loop_number)
+        OSCClient.set_parameter(['overdub_quantized', value], loop_number)
 
     ###########################################
     # GET PARAMETER VALUES
@@ -273,12 +303,13 @@ class SLClient:
 
         OSCClient.send_message(f'/sl/{loop_number}/get', [control, OSCServer.url,
                                                                 f'/parameter/{loop_number}/{control}'])
+    @staticmethod
+    def get_next_state(loop_number=-3):
+        OSCClient.get_parameter('next_state', loop_number)
 
-    def get_next_state(self, loop_number=-3):
-        self.get_parameter('next_state', loop_number)
-
-    def get_loop_len(self, loop_number=-3):
-        self.get_parameter('loop_len', loop_number=-3)
+    @staticmethod
+    def get_loop_len(loop_number=-3):
+        OSCClient.get_parameter('loop_len', loop_number=-3)
 
     def get_loop_pos(self, loop_number=-3):
         self.get_parameter('loop_pos', loop_number=-3)
