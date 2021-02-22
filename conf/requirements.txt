@@ -2,3 +2,9 @@
 osc4py3==1.0.8
 # pika
 pika==1.2.0
+
+# Http
+requests==2.18.4
+
+# UI
+prompt-toolkit==3.0.16
