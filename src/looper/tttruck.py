@@ -18,7 +18,7 @@ class TTTruck:
 
     @classmethod
     def publish_loop(cls, loop_number):
-        name = cls._generate_name()
+        name = TTTruck._generate_name()
         file = cls.loop_dir + '/' + name
         cls._save_loop(loop_number, file)
         time.sleep(1)
@@ -26,8 +26,8 @@ class TTTruck:
         msg = cls._format_msg('loop_add', name, parameters=[], url=url)
         TTTruckProducer.publish_msg(msg)
 
-    @classmethod
-    def _generate_name(cls):
+    @staticmethod
+    def _generate_name():
         ''.join(random.choice(string.ascii_lowercase + string.digits, k=20))
 
     @classmethod
@@ -46,7 +46,13 @@ class TTTruck:
     @classmethod
     def _format_msg(cls, command, name, parameters, url):
         if command == 'loop_add':
-            return json.dumps({'command': command, 'name': name, 'parameters': parameters, 'url': url})
+            return json.dumps({'command': command, 'name': name, 'parameters': parameters, 'return_url': url})
+        if command == 'loop_del':
+            return json.dumps({'command': command, 'name': name})
+        if command == 'loop_set':
+            return json.dumps({'command': command, 'name': name, 'parameters': parameters})
+        if command == 'global_set':
+            return json.dumps({'command': command, 'parameters': parameters})
 
 
 
@@ -78,13 +84,57 @@ class TTTruck:
         SLClient.pause(loop_number=index)
 
 
+    @classmethod
+    def delete_loop(cls, name):
+        msg = cls._format_msg('loop_del', name)
+        TTTruckProducer.publish_msg(msg)
+
+    # TODO
+    @classmethod
+    def modify_loop(cls, name):
+        idx = cls.get_loop_index(name)
+        parameters = cls._get_all_parameters(name)
+        msg = cls._format_msg('loop_set', name, parameters)
+        TTTruckProducer.publish_msg(msg)
+
+    # TODO
+    @classmethod
+    def modify_global(cls):
+        parameters = cls._get_all_global_parameters()
+        msg = cls._format_msg('global_set', parameters)
+        TTTruckProducer.publish_msg(msg)
 
     @classmethod
     def _get_loops(cls):
         pass
 
+    @classmethod
+    def set_loops(cls, i):
+        cls.loops = i
+
+    @classmethod
+    def get_loop_index(cls, name):
+        return cls.loop_index[name]
+
+    @classmethod
+    def update_loop_index(cls):
+        i = 0
+        for name, idx in cls.loop_index:
+            if idx > i:
+                cls.loop_index['name'] = i
+            i += 1
+
+    @classmethod
+    def _get_all_global_parameters(cls):
+        pass
+
+    @classmethod
+    def _get_all_parameters(cls):
+        pass
+
+
 if __name__ == '__main__':
-    from src.OSC.osc_server import OSCServer
+    from src.osc.osc_server import OSCServer
     OSCServer.start(debug=True)
     time.sleep(1)
     SLClient.ping()

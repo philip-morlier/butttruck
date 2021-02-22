@@ -1,3 +1,4 @@
+import time
 import unittest
 
 from src.looper.sl_client import OSCClient, OSCServer
@@ -10,10 +11,11 @@ class LooperTest(unittest.TestCase):
         self.ping = x
 
     def test_ping(self):
-        client = OSCClient(port=1111, client_name='test')
-        server = OSCServer(port=1111, debug=True)
-        server.register_handler('/test', self.handler)
-        client.sends_message('/test', type=',s', args=['hello'])
+        OSCClient.start(port=1111, client_name='test')
+        OSCServer.start(port=1111, debug=True)
+        OSCServer.register_handler('/test', self.handler)
+        OSCClient.send_message('/test', type=',s', args=['hello'])
+        time.sleep(0.5)
         self.assertEqual(self.ping, 'hello')
 
 
