@@ -1,4 +1,5 @@
 import json
+import pickle
 import random
 import string
 import subprocess
@@ -6,7 +7,8 @@ import tempfile
 import time
 
 from src.looper.sl_client import SLClient
-from src.producer.ttt_producer import TTTruckProducer
+from src.udp import Peers
+from src.udp.Peers import PeerClient
 
 
 class TTTruck:
@@ -22,47 +24,30 @@ class TTTruck:
         file = cls.loop_dir + '/' + name
         cls._save_loop(loop_number, file)
         time.sleep(1)
-        url = cls.upload_loop(file, name)
-        msg = cls._format_msg('loop_add', name, parameters=[], url=url)
-        TTTruckProducer.publish_msg(msg)
+        msg = {'loop_add': name}
+        #msg = cls._format_msg('loop_add', name, parameters=[])
+
+        PeerClient.send_queue.append(pickle.dumps(msg))
+
 
     @staticmethod
     def _generate_name():
-        ''.join(random.choice(string.ascii_lowercase + string.digits, k=20))
+        return ''.join(random.choices(string.ascii_lowercase + string.digits, k=20))
 
     @classmethod
     def _save_loop(cls, loop_number, file):
         SLClient.save_loop(loop_number, file)
 
-    @staticmethod
-    def upload_loop(file, name):
-        out, err = subprocess.Popen(['ffsend', 'upload', file, '-n', name], stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                    encoding='utf-8').communicate()
-        if err.strip().startswith('error'):
-            print(err)
-        return out.strip()
-
-
     @classmethod
-    def _format_msg(cls, command, name, parameters, url):
+    def _format_msg(cls, command, name, parameters):
         if command == 'loop_add':
-            return json.dumps({'command': command, 'name': name, 'parameters': parameters, 'return_url': url})
+            return json.dumps({'command': command, 'name': name, 'parameters': parameters})
         if command == 'loop_del':
             return json.dumps({'command': command, 'name': name})
         if command == 'loop_set':
             return json.dumps({'command': command, 'name': name, 'parameters': parameters})
         if command == 'global_set':
             return json.dumps({'command': command, 'parameters': parameters})
-
-
-
-    @classmethod
-    def download_loop(cls, url):
-        out, err = subprocess.Popen(['ffsend', 'download', '-I', '-o', cls.loop_dir, url], stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                    encoding='utf-8').communicate()
-        if err.strip().startswith('error'):
-            print(err)
-        return out.strip()
 
     @staticmethod
     def dispatch(msg):
@@ -87,7 +72,7 @@ class TTTruck:
     @classmethod
     def delete_loop(cls, name):
         msg = cls._format_msg('loop_del', name)
-        TTTruckProducer.publish_msg(msg)
+
 
     # TODO
     @classmethod
@@ -95,14 +80,14 @@ class TTTruck:
         idx = cls.get_loop_index(name)
         parameters = cls._get_all_parameters(name)
         msg = cls._format_msg('loop_set', name, parameters)
-        TTTruckProducer.publish_msg(msg)
+
 
     # TODO
     @classmethod
     def modify_global(cls):
         parameters = cls._get_all_global_parameters()
         msg = cls._format_msg('global_set', parameters)
-        TTTruckProducer.publish_msg(msg)
+
 
     @classmethod
     def _get_loops(cls):

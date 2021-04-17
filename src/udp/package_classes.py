@@ -51,4 +51,3 @@ class ShippingHandler:
         number_of_chunks = self.slice()[0]
         meta = tag + self.sender + self.size_in_bytes + number_of_chunks + self.wav_header
         return meta
-

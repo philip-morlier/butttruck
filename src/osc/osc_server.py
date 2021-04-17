@@ -4,11 +4,12 @@ from osc4py3.as_eventloop import osc_startup, osc_udp_server, osc_method
 
 
 class OSCServer:
-
+    host = '127.0.0.1'
+    port = 9952
     return_url = None
 
     @classmethod
-    def start(cls, host='127.0.0.1', port=9952, debug=False):
+    def start(cls, debug=False):
         if debug:
             logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
             logger = logging.getLogger("osc")
@@ -16,8 +17,8 @@ class OSCServer:
             osc_startup(logger=logger)
         else:
             osc_startup()
-        cls.return_url = host + ':' + str(port)
-        osc_udp_server(host, port, "osc_server")
+        cls.return_url = cls.host + ':' + str(cls.port)
+        osc_udp_server(cls.host, cls.port, "osc_server")
         cls._register_handlers()
 
     @classmethod

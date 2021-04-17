@@ -1,9 +1,6 @@
 import socket
 import time
 import threading
-from package_classes import *
-from interpreter import *
-from collections import deque
 
 away = ('127.0.0.1', 9999)
 home = ('0.0.0.0', 9998)
@@ -17,6 +14,7 @@ class ServerClient:
     def __init__(self):
         self.data = b''
         self.id = int(33).to_bytes(3, 'little')
+        self.count_bytes = b''
 
     def send_ping(self):
         while True:
