@@ -56,6 +56,7 @@ class OSCClient:
         msg = oscbuildparse.OSCMessage(message, type, args)
         osc_send(msg, cls.client_name)
 
+
     @classmethod
     def stop(cls):
         cls.running = False
@@ -64,3 +65,7 @@ class OSCClient:
     @classmethod
     def restart(cls):
         cls.running = False
+
+    @classmethod
+    def get_return_url(cls):
+        return OSCServer.return_url

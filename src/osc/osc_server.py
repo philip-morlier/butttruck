@@ -1,4 +1,5 @@
 import logging
+import threading
 
 from osc4py3.as_eventloop import osc_startup, osc_udp_server, osc_method
 
@@ -7,6 +8,8 @@ class OSCServer:
     host = '127.0.0.1'
     port = 9952
     return_url = None
+    loops = 0
+    selected_loop = 0
 
     @classmethod
     def start(cls, debug=False):
@@ -24,7 +27,11 @@ class OSCServer:
     @classmethod
     def _register_handlers(cls):
         osc_method('/pingrecieved', cls.ping_handler)
-        osc_method('/global/*', cls.global_parameter_handler)
+        osc_method('/global/selected_loop_num', cls.loop_handler)
+        osc_method('/loops', cls.test_handler)
+        osc_method('/del', cls.del_handler)
+        #osc_method('/loops', cls.test_handler)
+        #osc_method('/global/*', cls.global_parameter_handler)
         osc_method('/parameter/*', cls.parameter_handler)
         osc_method('/save_loop_error', cls.loop_save_handler)
         osc_method('/load_loop_error', OSCServer._loop_save_handler)
@@ -32,6 +39,22 @@ class OSCServer:
     @staticmethod
     def register_handler(address, function):
         osc_method(address, function)
+
+    @classmethod
+    def del_handler(cls, x, y, z):
+        print(f'DEL loop {z}')
+        cls.loops -= 1
+
+    @classmethod
+    def loop_handler(cls, x, y, z):
+        print(f'Selected loop {z}')
+        cls.selected_loop = int(z)
+
+    @classmethod
+    def test_handler(cls, x, y, z):
+        print(f'{x} {y} {z}')
+        #TTTruck.callback(x, y, z)
+        cls.selected_loop = int(z)
 
     @staticmethod
     def loop_save_handler(x, y, z):
@@ -45,9 +68,10 @@ class OSCServer:
     def global_parameter_handler(loop, param, value):
         print(f'Global parameter {param} is {value}')
 
-    @staticmethod
-    def ping_handler(address, version, loop_count):
+    @classmethod
+    def ping_handler(cls, address, version, loop_count):
         print(f'Sooperlooper {version} is listening at: {address}. {loop_count} loops in progress')
+        cls.loops = loop_count
 
     @staticmethod
     def _loop_save_handler(x, y, z):

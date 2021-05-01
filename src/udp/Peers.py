@@ -70,7 +70,7 @@ class PeerClient:
                     cls.add_peer((k, v))
                 cls.current_peers = new_peers
         else:
-            print('Recieved: ', data)
+            print('Recieved: ', data, 'From: ', port)
             cls.receive_queue.append(data)
 
     @staticmethod

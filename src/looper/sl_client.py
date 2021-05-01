@@ -1,3 +1,5 @@
+import time
+
 from src.osc.osc_client import OSCClient
 from src.osc.osc_server import OSCServer
 
@@ -303,7 +305,7 @@ class SLClient:
         i: loop_index s: control f: value
         Where control is one of the above or: state::"""
 
-        OSCClient.send_message(f'/sl/{loop_number}/get', [control, OSCServer.url,
+        OSCClient.send_message(f'/sl/{loop_number}/get', [control, OSCServer.return_url,
                                                           f'/parameter/{loop_number}/{control}'])
 
     @staticmethod
@@ -368,7 +370,7 @@ class SLClient:
                                args=[file, OSCServer.get_return_url(), '/load_loop_error'])
 
     @staticmethod
-    def save_loop(loop_number, file, format='wav', endian='big'):
+    def save_loop(file, loop_number=-3, format='wav', endian='big'):
         """/sl/#/save_loop   s:filename  s:format  s:endian  s:return_url  s:error_path
         saves current loop to given filename, may return error to error_path
         format and endian currently ignored, always uses 32 bit IEEE float WAV"""
@@ -400,11 +402,11 @@ class SLClient:
     @staticmethod
     def _get_global_parameter(parameter, return_path):
         """ /get  s:param  s:return_url  s:retpath"""
-        SLClient.send_message('/get', type=',sss', args=[parameter, OSCServer.get_return_url(), return_path])
+        OSCClient.send_message('/get', type=',sss', args=[parameter, OSCServer.get_return_url(), return_path])
 
     @staticmethod
     def get_tempo():
-        SLClient._get_global_parameter('/global/tempo')
+        SLClient._get_global_parameter('/global/tempo', '/global/parameter/tempo')
 
     @staticmethod
     def set_tempo(tempo):
@@ -419,20 +421,20 @@ class SLClient:
         SLClient._set_global_parameter('eighth_per_cycle', eighth_per_cycle)
 
     @staticmethod
-    def get_dry():
+    def global_get_dry():
         SLClient._get_global_parameter('/global/dry')
 
     @staticmethod
-    def set_dry(dry):
+    def global_set_dry(dry):
         """dry         	:: range 0 -> 1 affects common input passthru"""
         SLClient._set_global_parameter('dry', dry)
 
     @staticmethod
-    def get_wet():
+    def global_get_wet():
         SLClient._get_global_parameter('wet', '/global/wet')
 
     @staticmethod
-    def set_wet(wet):
+    def global_set_wet(wet):
         """ wet         	:: range 0 -> 1  affects common output level"""
         SLClient._set_global_parameter('wet', wet)
 
@@ -530,11 +532,12 @@ class SLClient:
         OSCClient.send_message('/loop_add', type=',if', args=[channels, length])
 
     @staticmethod
-    def loop_del(index):
+    def loop_del(index=-3):
         """/loop_del  i:loopindex
         a value of -1 for loopindex removes last loop, and is the only
         value currently recommended."""
         OSCClient.send_message('/loop_del', type=',i', args=[index])
+        SLClient.ping()
 
     ###############################
     ###
@@ -590,9 +593,9 @@ class SLClient:
         OSCClient.send_message('/unregister_update', [control, return_url, return_path])
 
     @staticmethod
-    def register_global_auto_update(control, return_url, return_path):
+    def register_global_auto_update(control, return_url, return_path, interval=10):
         """ /register_auto_update  s:ctrl i:ms_interval s:returl s:retpath"""
-        OSCClient.send_message('register_auto_update', [control, return_url, return_path])
+        OSCClient.send_message('/register_auto_update', [control, interval, return_url, return_path])
 
     @staticmethod
     def unregister_global_auto_update(control, return_url, return_path):

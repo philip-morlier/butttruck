@@ -5,7 +5,7 @@ class Package:
 
     def __init__(self, sender, wav):
         self.sender = sender.to_bytes(3, 'little')
-        wav_to_bytes = open(f'{wav}', 'rb')
+        wav_to_bytes = open(wav, 'rb')
         self.wav_header = wav_to_bytes.read(44)
         self.file = wav_to_bytes.read()
         size_in_bytes = sys.getsizeof(self.file)
