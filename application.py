@@ -4,6 +4,7 @@ import argparse
 from src.osc.osc_client import OSCClient
 from src.osc.osc_server import OSCServer
 from src.udp.Peers import PeerClient
+import src.looper.midi as midi
 
 
 class BuTTTruck:
@@ -14,7 +15,7 @@ class BuTTTruck:
         sl_port = 9951
         osc_server_host = '127.0.0.1'
         osc_server_port = 9952
-        server_host = '192.168.169.23'
+        server_host = '127.0.0.1'
         server_port = 9999
         debug = True
 
@@ -31,31 +32,45 @@ class BuTTTruck:
         from concurrent.futures import ThreadPoolExecutor
         executor = ThreadPoolExecutor(max_workers=5)
 
+        import subprocess
+        subprocess.Popen('sooperlooper')
         # OSC for sooperlooper communication
         OSCServer.start(debug=debug)
         executor.submit(OSCClient.start(host=sl_host, port=sl_port, debug=debug))
 
         executor.submit(process_incoming)
 
+
         # Client for sending/receiving to peers and public server
         PeerClient.add_peer((server_host, server_port), server=True)
         executor.submit(PeerClient.run)
+
+        executor.submit(midi.run)
 
         # Main application interface. Midi and/or OSC control
         # TTTruck.start()
 
 
+
 def process_incoming():
+    loops = {}
     while True:
         if PeerClient.receive_queue:
+            msg = PeerClient.receive_queue.pop()
             try:
-                msg = PeerClient.receive_queue.pop()
-                import pickle
-                print(pickle.loads(msg))
-            except:
-                pass
+                if msg['action'] == 'new_loop':
+                    if loops[msg.get('loop_id', None)] is not None:
+                        loops[msg['loop_id']].insert(msg['chunk_id'], msg['chunk'])
+                    else:
+                        loops[msg['loop_id']] = [None for i in range(msg('number_of_chunks'))]
+            except Exception as e:
+                print("OMG ", e)
+            for k,v in loops.items():
+                if not v.__contains__(None):
+                    print('success, write file and call load_loop')
+                    loops.pop(msg['loop_id'])
+        PeerClient.send_queue.append(loops)
         time.sleep(0.5)
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process some integers.')

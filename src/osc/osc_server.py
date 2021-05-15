@@ -1,7 +1,8 @@
 import logging
-import threading
 
 from osc4py3.as_eventloop import osc_startup, osc_udp_server, osc_method
+
+from src.looper.tttruck import TTTruck
 
 
 class OSCServer:
@@ -9,7 +10,7 @@ class OSCServer:
     port = 9952
     return_url = None
     loops = 0
-    selected_loop = 0
+    selected_loop = 1
 
     @classmethod
     def start(cls, debug=False):
@@ -34,7 +35,7 @@ class OSCServer:
         #osc_method('/global/*', cls.global_parameter_handler)
         osc_method('/parameter/*', cls.parameter_handler)
         osc_method('/save_loop_error', cls.loop_save_handler)
-        osc_method('/load_loop_error', OSCServer._loop_save_handler)
+        osc_method('/load_loop_error', cls._loop_save_handler)
 
     @staticmethod
     def register_handler(address, function):
@@ -49,12 +50,12 @@ class OSCServer:
     def loop_handler(cls, x, y, z):
         print(f'Selected loop {z}')
         cls.selected_loop = int(z)
+        TTTruck.selected_loop = int(z)
 
     @classmethod
     def test_handler(cls, x, y, z):
         print(f'{x} {y} {z}')
-        #TTTruck.callback(x, y, z)
-        cls.selected_loop = int(z)
+        TTTruck.callback(x, y, z)
 
     @staticmethod
     def loop_save_handler(x, y, z):
@@ -72,6 +73,7 @@ class OSCServer:
     def ping_handler(cls, address, version, loop_count):
         print(f'Sooperlooper {version} is listening at: {address}. {loop_count} loops in progress')
         cls.loops = loop_count
+        TTTruck.loops = loop_count
 
     @staticmethod
     def _loop_save_handler(x, y, z):

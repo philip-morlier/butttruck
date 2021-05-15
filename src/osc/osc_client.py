@@ -4,8 +4,6 @@ import time
 from osc4py3 import oscbuildparse
 from osc4py3.as_eventloop import osc_udp_client, osc_process, osc_send, osc_terminate, osc_startup
 
-from src.osc.osc_server import OSCServer
-
 
 class OSCClient:
     host = '127.0.0.1'
@@ -46,7 +44,7 @@ class OSCClient:
                 osc_terminate()
                 cls.running = True
                 cls.start()
-                OSCServer.start(cls.debug)
+                #OSCServer.start(cls.debug)
         osc_terminate()
 
     @classmethod

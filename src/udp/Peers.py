@@ -70,7 +70,7 @@ class PeerClient:
                     cls.add_peer((k, v))
                 cls.current_peers = new_peers
         else:
-            print('Recieved: ', data, 'From: ', port)
+            print('Received: ', data, 'From: ', port)
             cls.receive_queue.append(data)
 
     @staticmethod
@@ -79,4 +79,7 @@ class PeerClient:
 
     @staticmethod
     def send_ping(peer):
-        peer.sendto(b'ping', peer.get_address())
+        import json
+        # m = {'command': 'new_loop', 'loop_id': 1234, 'sender_id':5678, 'wave_bytes': b'/x00x01'}
+        # p = json.dumps(f'{m}').encode()
+        peer.sendto('{}', peer.get_address())

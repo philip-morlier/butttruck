@@ -10,3 +10,7 @@ requests==2.18.4
 prompt-toolkit==3.0.16
 
 pytest==6.2.3
+
+mido==1.2.9
+
+python-rtmidi==1.4.9

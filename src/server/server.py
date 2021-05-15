@@ -11,6 +11,7 @@ class BuTTTruckHandler(socketserver.DatagramRequestHandler):
         data = self.rfile.read()
         requester = self.client_address[0]
         requesters_peers = self.peers.get(requester, None)
+        print(data)
         if requesters_peers is None:
             requesters_peers = {}
             self.peers[requester] = requesters_peers

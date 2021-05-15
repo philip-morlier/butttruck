@@ -1,9 +1,8 @@
 import time
 
 from src.osc.osc_client import OSCClient
-from src.osc.osc_server import OSCServer
 
-
+return_url = 'localhost:9952'
 class SLClient:
 
     @staticmethod
@@ -13,7 +12,7 @@ class SLClient:
 
          If engine is there, it will respond with to the given URL and PATH with an OSC message with arguments:
          s:hosturl  s:version  i:loopcount"""
-        OSCClient.send_message('/ping', [OSCServer.get_return_url(), '/pingrecieved'])
+        OSCClient.send_message('/ping', [return_url, '/pingrecieved'])
 
     @staticmethod
     def hit(loop_number, command):
@@ -164,9 +163,9 @@ class SLClient:
         SLClient.set_parameter(['input_gain', value], loop_number)
 
     @staticmethod
-    def set_rate(value, loop_number=-3, ):
+    def set_rate(value, loop_number=-3):
         """  rate        	:: range 0.25 -> 4.0"""
-        SLClient.set_parameter(['feedback', value], loop_number)
+        SLClient.set_parameter(['rate', value], loop_number)
 
     @staticmethod
     def set_scratch_pos(value, loop_number=-3):
@@ -305,16 +304,16 @@ class SLClient:
         i: loop_index s: control f: value
         Where control is one of the above or: state::"""
 
-        OSCClient.send_message(f'/sl/{loop_number}/get', [control, OSCServer.return_url,
+        OSCClient.send_message(f'/sl/{loop_number}/get', [control, return_url,
                                                           f'/parameter/{loop_number}/{control}'])
 
     @staticmethod
     def get_next_state(loop_number=-3):
-        OSCClient.get_parameter('next_state', loop_number)
+        SLClient.get_parameter('next_state', loop_number)
 
     @staticmethod
     def get_loop_len(loop_number=-3):
-        OSCClient.get_parameter('loop_len', loop_number)
+        SLClient.get_parameter('loop_len', loop_number)
 
     @staticmethod
     def get_loop_pos(loop_number=-3):
@@ -367,7 +366,7 @@ class SLClient:
         """/sl/#/load_loop   s:filename  s:return_url  s:error_path
         loads a given filename into loop, may return error to error_path"""
         OSCClient.send_message(f'/sl/{loop_number}/load_loop',
-                               args=[file, OSCServer.get_return_url(), '/load_loop_error'])
+                               args=[file,     return_url, '/load_loop_error'])
 
     @staticmethod
     def save_loop(file, loop_number=-3, format='wav', endian='big'):
@@ -375,19 +374,19 @@ class SLClient:
         saves current loop to given filename, may return error to error_path
         format and endian currently ignored, always uses 32 bit IEEE float WAV"""
         OSCClient.send_message(f'/sl/{loop_number}/save_loop',
-                               args=[file, format, endian, OSCServer.get_return_url(), '/save_loop_error'])
+                               args=[file, format, endian, return_url, '/save_loop_error'])
 
     @staticmethod
     def save_session(file):
         """/save_session   s:filename  s:return_url  s:error_path
         saves current session description to filename."""
-        OSCClient.send_message('/save_session', args=[file, OSCServer.get_return_url(), '/save_session_error'])
+        OSCClient.send_message('/save_session', args=[file, return_url, '/save_session_error'])
 
     @staticmethod
     def load_session(file):
         """/load_session   s:filename  s:return_url  s:error_path
         loads and replaces the current session from filename."""
-        OSCClient.send_message('/load_session', args=[file, OSCServer.get_return_url(), '/load_session_error'])
+        OSCClient.send_message('/load_session', args=[file, return_url, '/load_session_error'])
 
     ###########################
     ###
@@ -402,7 +401,7 @@ class SLClient:
     @staticmethod
     def _get_global_parameter(parameter, return_path):
         """ /get  s:param  s:return_url  s:retpath"""
-        OSCClient.send_message('/get', type=',sss', args=[parameter, OSCServer.get_return_url(), return_path])
+        OSCClient.send_message('/get', type=',sss', args=[parameter, return_url, return_path])
 
     @staticmethod
     def get_tempo():
@@ -479,9 +478,10 @@ class SLClient:
         SLClient._get_global_parameter('select_next_loop', '/global/select_next_loop')
 
     @staticmethod
-    def set_select_next_loop(select_next_loop):
+    def set_select_next_loop():
         """select_next_loop  :: any changes"""
-        SLClient._set_global_parameter('select_next_loop', select_next_loop)
+        SLClient._set_global_parameter('select_next_loop', 1.0)
+
 
     @staticmethod
     def get_select_prev_loop():
