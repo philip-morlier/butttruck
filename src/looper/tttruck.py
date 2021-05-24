@@ -143,3 +143,9 @@ class TTTruck:
             SLClient.loop_del(-1)
             time.sleep(1)
 
+    @classmethod
+    def new_remote_loop(cls):
+        msg = json.dumps({'action': 'new_loop'})
+        PeerClient.send_queue.append(msg)
+        print(PeerClient.send_queue)
+

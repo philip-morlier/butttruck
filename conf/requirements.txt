@@ -13,4 +13,3 @@ pytest==6.2.3
 
 mido==1.2.9
 
-python-rtmidi==1.4.9

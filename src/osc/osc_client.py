@@ -10,7 +10,6 @@ class OSCClient:
     port = 9951
     client_name = 'butttruck'
     running = False
-    restart = True
 
     # osc4py3 as_allthreads is expensive but may work better than this
     @classmethod
@@ -39,12 +38,6 @@ class OSCClient:
         while cls.running:
             time.sleep(0.05)
             osc_process()
-
-            if cls.restart and not cls.running:
-                osc_terminate()
-                cls.running = True
-                cls.start()
-                #OSCServer.start(cls.debug)
         osc_terminate()
 
     @classmethod
@@ -58,12 +51,3 @@ class OSCClient:
     @classmethod
     def stop(cls):
         cls.running = False
-        cls.restart = False
-
-    @classmethod
-    def restart(cls):
-        cls.running = False
-
-    @classmethod
-    def get_return_url(cls):
-        return OSCServer.return_url

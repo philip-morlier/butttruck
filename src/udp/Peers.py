@@ -45,6 +45,7 @@ class PeerClient:
         while cls.outputs:
             read, write, exception = select.select(cls.inputs, cls.outputs, cls.outputs)
             msg = None
+            print(cls.send_queue)
             if cls.send_queue:
                 msg = cls.send_queue.pop()
 
@@ -70,16 +71,17 @@ class PeerClient:
                     cls.add_peer((k, v))
                 cls.current_peers = new_peers
         else:
-            print('Received: ', data, 'From: ', port)
             cls.receive_queue.append(data)
 
     @staticmethod
     def send_msg(peer, msg):
-        peer.sendto(msg, peer.get_address())
-
+        try:
+            peer.sendto(msg.encode(), peer.get_address())
+        except Exception as error:
+            print(error)
     @staticmethod
     def send_ping(peer):
         import json
         # m = {'command': 'new_loop', 'loop_id': 1234, 'sender_id':5678, 'wave_bytes': b'/x00x01'}
         # p = json.dumps(f'{m}').encode()
-        peer.sendto('{}', peer.get_address())
+        peer.sendto('{}'.encode(), peer.get_address())

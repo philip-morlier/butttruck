@@ -8,11 +8,12 @@ from src.looper.sl_client import SLClient
 from src.looper.tttruck import TTTruck
 from src.osc.osc_client import OSCClient
 
+from butttruck.application import BuTTTruck
+
 kb = KeyBindings()
 
-from concurrent.futures import ThreadPoolExecutor
-executor = ThreadPoolExecutor(max_workers=5)
-executor.submit(OSCClient.start(debug=True))
+TTT = BuTTTruck()
+TTT.main()
 
 @kb.add('c-q')
 def exit_(event):
@@ -22,7 +23,6 @@ def exit_(event):
     Setting a return value means: quit the event loop that drives the user
     interface and return this value from the `Application.run()` call.
     """
-    executor.shutdown(False)
     event.app.exit()
 
 @kb.add('r')
@@ -40,6 +40,11 @@ def _(event):
 @kb.add('z')
 def _(event):
     TTTruck.loop_reverse()
+
+@kb.add('j')
+def _(event):
+    TTTruck.new_remote_loop()
+
 
 app = Application(key_bindings=kb, full_screen=True)
 app.run()
