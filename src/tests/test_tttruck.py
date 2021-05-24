@@ -17,8 +17,13 @@ class TestTTTruck(TestCase):
         OSCServer.start(debug=True)
         SLClient.register_global_auto_update('selected_loop_num', OSCServer.return_url, '/loops', interval=1)
 
-        TTTruck.delete_all_loops()
+        SLClient.register_auto_update('reverse', OSCServer.return_url, '/loops', interval=1, loop_number=1)
 
+        SLClient.ping()
+        time.sleep(0.3)
+        for i in range(OSCServer.loops):
+            SLClient.loop_del(0)
+            time.sleep(.5)
         # no loops, empty index
         self.assertEqual(0, TTTruck.loops)
         self.assertFalse(TTTruck.loop_index)

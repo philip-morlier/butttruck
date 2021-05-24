@@ -121,7 +121,7 @@ class TTTruck:
             print(e)
 
     @classmethod
-    def set_selected_loop_num(cls, loop_num):
+    def selected_loop_num(cls, loop_num):
         cls.selected_loop = loop_num
 
     @classmethod
