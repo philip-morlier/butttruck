@@ -1,6 +1,7 @@
 import time
 import argparse
 
+from butttruck.src.looper.tttruck import TTTruck
 from src.osc.osc_client import OSCClient
 from src.osc.osc_server import OSCServer
 from src.udp.Peers import PeerClient
@@ -15,14 +16,14 @@ class BuTTTruck:
         sl_port = 9951
         osc_server_host = '127.0.0.1'
         osc_server_port = 9952
-        server_host = '127.0.0.1'
+        server_host = '192.168.0.38'
         server_port = 9999
         debug = True
 
         if config is not None:
             if config.sooperlooper_host is not None:
                 sl_host = config.sooperlooper_host
-            if config.sooperlooper_host is not None:
+            if config.sooperlooper_port is not None:
                 sl_port = config.sooperlooper_host
             if config.server_host is not None:
                 server_host = config.server_host
@@ -56,20 +57,26 @@ def process_incoming():
     loops = {}
     while True:
         if PeerClient.receive_queue:
-            msg = PeerClient.receive_queue.pop()
+            incoming_bytes = PeerClient.receive_queue.pop().decode()
+            import json
+            msg = json.loads(incoming_bytes)
             try:
-                if msg['action'] == 'new_loop':
-                    if loops[msg.get('loop_id', None)] is not None:
-                        loops[msg['loop_id']].insert(msg['chunk_id'], msg['chunk'])
+                if msg['action']:
+
+                    if msg['action'] == 'new_loop':
+                        if loops[msg.get('loop_id', None)] is not None:
+                            loops[msg['loop_id']].insert(msg['chunk_id'], msg['chunk'])
+                        else:
+                            loops[msg['loop_id']] = [None for i in range(msg('number_of_chunks'))]
                     else:
-                        loops[msg['loop_id']] = [None for i in range(msg('number_of_chunks'))]
+                        getattr(TTTruck, msg['action'])()
             except Exception as e:
                 print("OMG ", e)
             for k,v in loops.items():
                 if not v.__contains__(None):
                     print('success, write file and call load_loop')
                     loops.pop(msg['loop_id'])
-        PeerClient.send_queue.append(loops)
+        # PeerClient.send_queue.append(loops)
         time.sleep(0.5)
 
 if __name__ == '__main__':
