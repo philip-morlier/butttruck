@@ -44,9 +44,11 @@ class TTTruck:
     def publish_loop(cls):
         #name = TTTruck._generate_name()
         # TODO
-        name = cls.loop_index[SLClient.get_selected_loop_num()]
-        file = cls.loop_dir + '/' + cls.loops[SLClient.get_selected_loop_num()]
-        cls._save_loop(file)
+        SLClient.get_selected_loop_num()
+        time.sleep(1)
+        name = cls.loop_index[cls.selected_loop]
+        file = cls.loop_dir + '/' + name
+        SLClient.save_loop(file)
         time.sleep(1)
         msg = {'loop_add': name}
         p = Package(77, file)
@@ -55,7 +57,7 @@ class TTTruck:
         enums = s.enumerate()
         metas = s.meta()
         #msg = cls._format_msg('loop_add', name, parameters=[])
-
+        # use json not pickle!!!!
         PeerClient.send_queue.append(pickle.dumps(msg))
 
     @classmethod
@@ -119,7 +121,7 @@ class TTTruck:
             print(e)
 
     @classmethod
-    def selected_loop_num(cls, loop_num):
+    def set_selected_loop_num(cls, loop_num):
         cls.selected_loop = loop_num
 
     @classmethod
@@ -140,7 +142,8 @@ class TTTruck:
         SLClient.ping()
         time.sleep(1)
         while cls.loops > 0:
-            SLClient.loop_del(-1)
+            SLClient.set_selected_loop_num(1)
+            cls.delete_loop()
             time.sleep(1)
 
     @classmethod
