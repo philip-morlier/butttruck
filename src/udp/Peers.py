@@ -10,6 +10,7 @@ class Peer(socket.socket):
         super().__init__(x, y)
         self.address = addr
         self.server = server
+        self.status = {}
 
     def get_address(self):
         return self.address
@@ -17,10 +18,15 @@ class Peer(socket.socket):
     def is_server(self):
         return self.server
 
+    def get_status(self):
+        return self.status
+
+
 class PeerClient:
+    """Needs to create a standard 'ping' message which conforms to shared data structure"""
+
     server = None
     data = b''
-    id = int(77).to_bytes(3, 'little')
     receive_queue = deque()
     send_queue = deque()
     inputs = []
@@ -45,7 +51,6 @@ class PeerClient:
         while cls.outputs:
             read, write, exception = select.select(cls.inputs, cls.outputs, cls.outputs)
             msg = None
-            print(cls.send_queue)
             if cls.send_queue:
                 msg = cls.send_queue.pop()
 
@@ -67,11 +72,20 @@ class PeerClient:
             if new_peers != cls.current_peers:
                 diff = {key: new_peers[key] for key in set(new_peers) - set(cls.current_peers)}
                 print('Adding peers: ', diff)
-                for k,v in diff.items():
+                for k, v in diff.items():
                     cls.add_peer((k, v))
                 cls.current_peers = new_peers
         else:
             cls.receive_queue.append(data)
+
+            if data['action'] is 'loop_add':
+                loop_name = data['message']['loop_name']
+                cc = data['message']['current_chunk']
+
+                if peer.status['loop_name'] is None:
+                    peer.status[loop_name] = []
+                else:
+                    peer.status[loop_name].append(cc)
 
     @staticmethod
     def send_msg(peer, msg):
@@ -79,9 +93,10 @@ class PeerClient:
             peer.sendto(msg.encode(), peer.get_address())
         except Exception as error:
             print(error)
+
     @staticmethod
     def send_ping(peer):
         import json
-        # m = {'command': 'new_loop', 'loop_id': 1234, 'sender_id':5678, 'wave_bytes': b'/x00x01'}
-        # p = json.dumps(f'{m}').encode()
-        peer.sendto('{}'.encode(), peer.get_address())
+        status = peer.get_status()
+        message = {'action': 'ping', 'message': {}, 'state': status}
+        peer.sendto(json.dumps(message).encode(), peer.get_address())

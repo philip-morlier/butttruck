@@ -9,6 +9,7 @@ import time
 from src.looper.sl_client import SLClient
 from src.udp.Peers import PeerClient
 from src.udp.package_classes import Package, ShippingHandler
+from src.udp.wav_slicer import WavSlicer
 
 
 class TTTruck:
@@ -34,31 +35,21 @@ class TTTruck:
 
     @classmethod
     def delete_loop(cls):
-        selected_loop = cls.selected_loop
-        SLClient.loop_del(selected_loop)
-        name = cls.loop_index.pop(int(selected_loop + 1))
+        SLClient.loop_del(cls.selected_loop)
+        cls.loop_index.pop(int(cls.selected_loop + 1))
         cls.loops -= 1
         cls.loop_index = cls.update_loop_index(cls.loops)
 
     @classmethod
     def publish_loop(cls):
-        #name = TTTruck._generate_name()
-        # TODO
         SLClient.get_selected_loop_num()
         time.sleep(1)
         name = cls.loop_index[cls.selected_loop]
         file = cls.loop_dir + '/' + name
         SLClient.save_loop(file)
+        # TODO: find a more reliable way to determine when the file has been written
         time.sleep(1)
-        msg = {'loop_add': name}
-        p = Package(77, file)
-        s = ShippingHandler(p)
-        slices = s.slice()
-        enums = s.enumerate()
-        metas = s.meta()
-        #msg = cls._format_msg('loop_add', name, parameters=[])
-        # use json not pickle!!!!
-        PeerClient.send_queue.append(pickle.dumps(msg))
+        WavSlicer.slice_and_send(file, name)
 
     @classmethod
     def loop_reverse(cls):
@@ -86,11 +77,6 @@ class TTTruck:
 
     @classmethod
     def loop_add(cls, msg):
-        name = msg['name']
-        parameters = msg['parameters']
-        url = msg['url']
-        loop_file = cls.download_loop(url)
-        index = cls._get_loops()
         SLClient.loop_add()
         SLClient.load_loop(index, loop_file)
         SLClient.set_quantize(3, loop_number=index)
@@ -102,14 +88,15 @@ class TTTruck:
         return cls.loop_index[name]
 
     @classmethod
-    def update_loop_index(cls, idx):
+    def update_loop_index(cls, number_of_loops):
         updated = {}
-        for k, v in cls.loop_index.items():
-            if k > idx:
-                item = cls.loop_index[k]
-                updated[k-1] = item
+        for loop_index, loop_name in cls.loop_index.items():
+            if loop_index == number_of_loops + 1:
+                updated[loop_index-1] = loop_name
+            elif loop_index == number_of_loops:
+                updated[loop_index] = loop_name
             else:
-                updated[k] = v
+                raise Exception("loop index is broken")
         return updated
 
 

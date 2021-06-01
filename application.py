@@ -62,20 +62,24 @@ def process_incoming():
             msg = json.loads(incoming_bytes)
             try:
                 if msg['action']:
-
-                    if msg['action'] == 'new_loop':
-                        if loops[msg.get('loop_id', None)] is not None:
-                            loops[msg['loop_id']].insert(msg['chunk_id'], msg['chunk'])
+                    if msg['action'] == 'ping':
+                        pass
+                    if msg['action'] == 'loop_add':
+                        loop_name = msg['message']['loop_name']
+                        if loops.get(loop_name, None) is not None:
+                            loops[loop_name].insert(msg['chunk_number'] - 1, msg['chunk'])
                         else:
                             loops[msg['loop_id']] = [None for i in range(msg('number_of_chunks'))]
                     else:
                         getattr(TTTruck, msg['action'])()
             except Exception as e:
                 print("OMG ", e)
-            for k,v in loops.items():
+
+            # TODO Better solution for determining all wav file chunks have been received.
+            for k, v in loops.items():
                 if not v.__contains__(None):
                     print('success, write file and call load_loop')
-                    loops.pop(msg['loop_id'])
+                    loops.pop(msg['loop_name'])
         # PeerClient.send_queue.append(loops)
         time.sleep(0.5)
 
