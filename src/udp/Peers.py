@@ -51,46 +51,55 @@ class PeerClient:
         while cls.outputs:
             read, write, exception = select.select(cls.inputs, cls.outputs, cls.outputs)
             msg = None
-            if cls.send_queue:
-                msg = cls.send_queue.pop()
+            try:
+                if cls.send_queue:
+                    msg = cls.send_queue.pop()
+                    print(msg)
 
-            for peer in write:
-                if msg is None:
-                    cls.send_ping(peer)
-                elif not peer.is_server():
-                    cls.send_msg(peer, msg)
+                for peer in write:
+                    if msg is None:
+                        cls.send_ping(peer)
+                    elif not peer.is_server():
+                        cls.send_msg(peer, msg)
 
-            for peer in read:
-                cls.receive_data(peer)
-            time.sleep(0.5)
-
+                for peer in read:
+                    cls.receive_data(peer)
+                time.sleep(0.5)
+            except Exception as e:
+                print(e, 'we are in peers dot run')
     @classmethod
     def receive_data(cls, peer):
         data, port = peer.recvfrom(55000)
-        if peer.is_server():
-            new_peers = pickle.loads(data)
-            if new_peers != cls.current_peers:
-                diff = {key: new_peers[key] for key in set(new_peers) - set(cls.current_peers)}
-                print('Adding peers: ', diff)
-                for k, v in diff.items():
-                    cls.add_peer((k, v))
-                cls.current_peers = new_peers
-        else:
-            cls.receive_queue.append(data)
+        try:
+            if peer.is_server():
+                new_peers = pickle.loads(data)
+                if new_peers != cls.current_peers:
+                    diff = {key: new_peers[key] for key in set(new_peers) - set(cls.current_peers)}
+                    print('Adding peers: ', diff)
+                    for k, v in diff.items():
+                        cls.add_peer((k, v))
+                    cls.current_peers = new_peers
+            else:
+                cls.receive_queue.append(data)
+        except Exception as e:
+            print('receivedata 1 ', e)
 
-            if data['action'] is 'loop_add':
-                loop_name = data['message']['loop_name']
-                cc = data['message']['current_chunk']
+            try:
+                if data['action'] is 'loop_add':
+                    loop_name = data['message']['loop_name']
+                    cc = data['message']['current_chunk']
 
-                if peer.status['loop_name'] is None:
-                    peer.status[loop_name] = []
-                else:
-                    peer.status[loop_name].append(cc)
-
+                    if peer.status['loop_name'] is None:
+                        peer.status[loop_name] = []
+                    else:
+                        peer.status[loop_name].append(cc)
+            except Exception as e:
+                print('recievedata2 ', e)
     @staticmethod
     def send_msg(peer, msg):
         try:
             peer.sendto(msg.encode(), peer.get_address())
+            print('got here to send msg method')
         except Exception as error:
             print(error)
 

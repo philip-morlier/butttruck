@@ -1,7 +1,7 @@
 import time
 import argparse
 
-from butttruck.src.looper.tttruck import TTTruck
+from src.looper.tttruck import TTTruck
 from src.osc.osc_client import OSCClient
 from src.osc.osc_server import OSCServer
 from src.udp.Peers import PeerClient
@@ -70,8 +70,8 @@ def process_incoming():
                             loops[loop_name].insert(msg['chunk_number'] - 1, msg['chunk'])
                         else:
                             loops[msg['loop_id']] = [None for i in range(msg('number_of_chunks'))]
-                    else:
-                        getattr(TTTruck, msg['action'])()
+                    # else:
+                    #     getattr(TTTruck, msg['action'])()
             except Exception as e:
                 print("OMG ", e)
 

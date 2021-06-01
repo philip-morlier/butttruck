@@ -8,7 +8,8 @@ from src.looper.sl_client import SLClient
 from src.looper.tttruck import TTTruck
 from src.osc.osc_client import OSCClient
 
-from butttruck.application import BuTTTruck
+from src.application import BuTTTruck
+from src.udp.wav_slicer import WavSlicer
 
 kb = KeyBindings()
 
@@ -44,6 +45,11 @@ def _(event):
 @kb.add('j')
 def _(event):
     TTTruck.new_remote_loop()
+
+@kb.add('q')
+def _(event):
+    WavSlicer.slice_and_send('/home/Philip/Desktop/tttruck_loop/butttruck/src/udp/test1.wav', 'sakjsalkdjflds')
+
 
 
 app = Application(key_bindings=kb, full_screen=True)
