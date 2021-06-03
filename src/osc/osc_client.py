@@ -46,7 +46,7 @@ class OSCClient:
             cls.start()
         msg = oscbuildparse.OSCMessage(message, type, args)
         osc_send(msg, cls.client_name)
-
+        osc_process()
 
     @classmethod
     def stop(cls):

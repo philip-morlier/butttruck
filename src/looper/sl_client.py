@@ -135,7 +135,7 @@ class SLClient:
     #######################################################
     @staticmethod
     def set_parameter(value, loop_number):
-        OSCClient.send_message(f'/sl/{loop_number}/set', [value])
+        OSCClient.send_message(f'/sl/{loop_number}/set', value)
 
     @staticmethod
     def set_rec_thresh(value, loop_number=-3):
@@ -537,7 +537,7 @@ class SLClient:
         a value of -1 for loopindex removes last loop, and is the only
         value currently recommended."""
         OSCClient.send_message('/loop_del', type=',i', args=[index])
-        SLClient.ping()
+        #SLClient.ping()
 
     ###############################
     ###

@@ -1,14 +1,10 @@
-import json
-import pickle
 import random
 import string
-import subprocess
 import tempfile
 import time
+import os
 
 from src.looper.sl_client import SLClient
-from src.udp.Peers import PeerClient
-from src.udp.package_classes import Package, ShippingHandler
 from src.udp.wav_slicer import WavSlicer
 
 
@@ -47,9 +43,7 @@ class TTTruck:
         name = cls.loop_index[cls.selected_loop]
         file = cls.loop_dir + '/' + name
         SLClient.save_loop(file)
-        # TODO: find a more reliable way to determine when the file has been written
-        time.sleep(1)
-        WavSlicer.slice_and_send(file, name)
+        WavSlicer.slice_and_send(name, file)
 
     @classmethod
     def loop_reverse(cls):
@@ -76,12 +70,15 @@ class TTTruck:
         return ''.join(random.choices(string.ascii_lowercase + string.digits, k=20))
 
     @classmethod
-    def loop_add(cls, msg):
+    def loop_add(cls, name):
         SLClient.loop_add()
-        SLClient.load_loop(index, loop_file)
-        SLClient.set_quantize(3, loop_number=index)
-        SLClient.set_playback_sync(1, loop_number=index)
-        SLClient.pause(loop_number=index)
+        cls.loops += 1
+        SLClient.load_loop(cls.loops, cls.loop_dir + '/' + name + '.wav')
+        SLClient.set_quantize(3, loop_number=cls.loops)
+        SLClient.set_sync(1, loop_number=cls.loops)
+        SLClient.set_playback_sync(1, loop_number=cls.loops)
+        SLClient.set_mute_quantized(1, loop_number=cls.loops)
+        SLClient.pause(loop_number=cls.loops)
 
     @classmethod
     def get_loop_index(cls, name):
@@ -91,14 +88,13 @@ class TTTruck:
     def update_loop_index(cls, number_of_loops):
         updated = {}
         for loop_index, loop_name in cls.loop_index.items():
-            if loop_index == number_of_loops + 1:
-                updated[loop_index-1] = loop_name
-            elif loop_index == number_of_loops:
+            if loop_index >= number_of_loops + 1:
+                updated[loop_index - 1] = loop_name
+            elif loop_index <= number_of_loops:
                 updated[loop_index] = loop_name
             else:
                 raise Exception("loop index is broken")
         return updated
-
 
     @classmethod
     def callback(cls, x, y, z):
@@ -134,8 +130,10 @@ class TTTruck:
             time.sleep(1)
 
     @classmethod
-    def new_remote_loop(cls):
-        msg = json.dumps({'action': 'new_loop'})
-        PeerClient.send_queue.append(msg)
-        print(PeerClient.send_queue)
-
+    def write_wav(cls, wav):
+        name = wav[0]
+        bytes = b''.join(wav[1])
+        with open(cls.loop_dir + '/' + name + '.wav', 'wb+') as f:
+            f.write(bytes)
+        if name == 'test1':
+            TTTruck.loop_add(name)

@@ -1,3 +1,4 @@
+import json
 import pickle
 import select
 import socket
@@ -65,43 +66,58 @@ class PeerClient:
                 for peer in read:
                     cls.receive_data(peer)
                 time.sleep(0.5)
+
             except Exception as e:
                 print(e, 'we are in peers dot run')
+
     @classmethod
     def receive_data(cls, peer):
         data, port = peer.recvfrom(55000)
+        if peer.is_server():
+            cls.update_peers(data)
+        else:
+            cls.receive_queue.append((data, peer))
         try:
-            if peer.is_server():
-                new_peers = pickle.loads(data)
-                if new_peers != cls.current_peers:
-                    diff = {key: new_peers[key] for key in set(new_peers) - set(cls.current_peers)}
-                    print('Adding peers: ', diff)
-                    for k, v in diff.items():
-                        cls.add_peer((k, v))
-                    cls.current_peers = new_peers
-            else:
-                cls.receive_queue.append(data)
+            cls.update_status(data, peer)
         except Exception as e:
-            print('receivedata 1 ', e)
+            print('Unable to update status: ', e)
 
-            try:
-                if data['action'] is 'loop_add':
-                    loop_name = data['message']['loop_name']
-                    cc = data['message']['current_chunk']
+    @classmethod
+    def update_status(cls, data, peer):
+        data = json.loads(data)
+        if data['action'] == 'loop_add':
+            message = data['message']
+            loop_name = message['loop_name']
+            received = message['current_chunk']
+            total = message['number_of_chunks']
+            if peer.status.get(loop_name, None) is None:
+                peer.status[loop_name] = [i for i in range(1, total + 1)]
+                peer.status[loop_name].remove(received)
+            elif len(peer.status[loop_name]) == 0:
+                peer.status.pop(loop_name)
+            else:
+                peer.status[loop_name].remove(received)
+        if data['action'] == 'ping':
+            if data['state']:
+                print(data)
 
-                    if peer.status['loop_name'] is None:
-                        peer.status[loop_name] = []
-                    else:
-                        peer.status[loop_name].append(cc)
-            except Exception as e:
-                print('recievedata2 ', e)
+
+    @classmethod
+    def update_peers(cls, data):
+        new_peers = pickle.loads(data)
+        if new_peers != cls.current_peers:
+            diff = {key: new_peers[key] for key in set(new_peers) - set(cls.current_peers)}
+            print('Adding peers: ', diff)
+            for k, v in diff.items():
+                cls.add_peer((k, v))
+            cls.current_peers = new_peers
+
     @staticmethod
     def send_msg(peer, msg):
         try:
             peer.sendto(msg.encode(), peer.get_address())
-            print('got here to send msg method')
         except Exception as error:
-            print(error)
+            print(f"Unable to send_msg {e}")
 
     @staticmethod
     def send_ping(peer):

@@ -1,7 +1,8 @@
 import time
 import unittest
 
-from src.looper.sl_client import OSCClient, OSCServer
+from src.osc.osc_client import OSCClient
+from src.osc.osc_server import OSCServer
 
 
 class LooperTest(unittest.TestCase):

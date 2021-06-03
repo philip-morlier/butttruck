@@ -21,7 +21,7 @@ class TestTTTruck(TestCase):
 
         SLClient.ping()
         time.sleep(0.3)
-        for i in range(OSCServer.loops):
+        for i in range(TTTruck.loops):
             SLClient.loop_del(0)
             time.sleep(.5)
         # no loops, empty index
@@ -73,6 +73,3 @@ class TestTTTruck(TestCase):
         time.sleep(0.3)
         self.assertEqual(1, TTTruck.loops)
         self.assertEqual(first_loop, TTTruck.loop_index[1])
-
-
-

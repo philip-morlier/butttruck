@@ -42,13 +42,9 @@ def _(event):
 def _(event):
     TTTruck.loop_reverse()
 
-@kb.add('j')
-def _(event):
-    TTTruck.new_remote_loop()
-
 @kb.add('q')
 def _(event):
-    WavSlicer.slice_and_send('/home/Philip/Desktop/tttruck_loop/butttruck/src/udp/test1.wav', 'sakjsalkdjflds')
+    WavSlicer.slice_and_send('sakjsalkdjflds', '/home/Philip/Desktop/tttruck_loop/butttruck/src/udp/test1.wav')
 
 
 

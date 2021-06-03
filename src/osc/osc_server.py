@@ -9,8 +9,6 @@ class OSCServer:
     host = '127.0.0.1'
     port = 9952
     return_url = None
-    loops = 0
-    selected_loop = 1
 
     @classmethod
     def start(cls, debug=False):
@@ -30,7 +28,7 @@ class OSCServer:
         osc_method('/pingrecieved', cls.ping_handler)
         osc_method('/global/selected_loop_num', cls.loop_handler)
         osc_method('/loops', cls.test_handler)
-        osc_method('/del', cls.del_handler)
+        #osc_method('/del', cls.del_handler)
         #osc_method('/loops', cls.test_handler)
         #osc_method('/global/*', cls.global_parameter_handler)
         osc_method('/parameter/*', cls.parameter_handler)
@@ -44,12 +42,11 @@ class OSCServer:
     @classmethod
     def del_handler(cls, x, y, z):
         print(f'DEL loop {z}')
-        cls.loops -= 1
+        TTTruck.loops -= 1
 
     @classmethod
     def loop_handler(cls, x, y, z):
         print(f'Selected loop {z}')
-        cls.selected_loop = int(z)
         TTTruck.selected_loop = int(z)
 
     @classmethod
@@ -72,7 +69,6 @@ class OSCServer:
     @classmethod
     def ping_handler(cls, address, version, loop_count):
         print(f'Sooperlooper {version} is listening at: {address}. {loop_count} loops in progress')
-        cls.loops = loop_count
         TTTruck.loops = loop_count
 
     @staticmethod
