@@ -367,7 +367,7 @@ class SLClient:
         """/sl/#/load_loop   s:filename  s:return_url  s:error_path
         loads a given filename into loop, may return error to error_path"""
         OSCClient.send_message(f'/sl/{loop_number}/load_loop',
-                               args=[file,     return_url, '/load_loop_error'])
+                               args=[file, return_url, '/load_loop_error'])
 
     @staticmethod
     def save_loop(file, loop_number=-3, format='wav', endian='big'):

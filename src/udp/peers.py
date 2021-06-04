@@ -60,15 +60,13 @@ class PeerClient:
                         cls.send_msg(peer_resend, msg)
                     else:
                         for peer in write:
-                            if msg is None:
+                            if msg is None or peer.is_server():
                                 cls.send_ping(peer)
-                            elif not peer.is_server():
+                            else:
                                 cls.send_msg(peer, msg)
-
                 for peer in read:
                     cls.receive_data(peer)
                 time.sleep(0.1)
-
             except Exception as e:
                 print(e, 'we are in peers dot run')
 
@@ -79,10 +77,10 @@ class PeerClient:
             cls.update_peers(data)
         else:
             cls.receive_queue.append((data, peer))
-        try:
-            cls.update_status(data, peer)
-        except Exception as e:
-            print('Unable to update status: ', e)
+            try:
+                cls.update_status(data, peer)
+            except Exception as e:
+                print('Unable to update status: ', e)
 
     @classmethod
     def update_status(cls, data, peer):
@@ -117,16 +115,19 @@ class PeerClient:
     @staticmethod
     def send_msg(peer, msg):
         try:
-            peer.sendto(msg.encode(), peer.get_address())
+            peer.sendto(msg[0].encode(), peer.get_address())
         except Exception as error:
             print(f"Unable to send_msg {error}")
 
     @staticmethod
     def send_ping(peer):
-        import json
-        status = peer.get_status()
-        message = {'action': 'ping', 'message': {}, 'state': status}
-        peer.sendto(json.dumps(message).encode(), peer.get_address())
+        if peer.is_server():
+            peer.sendto(b'', peer.get_address())
+        else:
+            import json
+            status = peer.get_status()
+            message = {'action': 'ping', 'message': {}, 'state': status}
+            peer.sendto(json.dumps(message).encode(), peer.get_address())
 
     @classmethod
     def exit(cls):

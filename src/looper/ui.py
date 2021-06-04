@@ -65,6 +65,11 @@ def _(event):
 def _(event):
     TTTruck.loop_reverse()
 
+@kb.add('c-z')
+def _(event):
+    #/tmp/tmpho4iedf1/tq21alez3ne04s1oago7.wav
+    TTTruck.loop_load('tq21alez3ne04s1oago7')
+
 app = Application(key_bindings=kb, full_screen=True)
 BuTTTruck.main()
 app.run()
