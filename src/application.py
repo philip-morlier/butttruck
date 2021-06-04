@@ -11,7 +11,10 @@ from src.udp.wav_slicer import WavSlicer
 
 
 class BuTTTruck:
-    s = scheduler(time.time, time.sleep)
+    scheduled_tasks = scheduler(time.time, time.sleep)
+    sooperlooper = None
+    from concurrent.futures import ThreadPoolExecutor
+    pool = ThreadPoolExecutor()
 
     @staticmethod
     def main(config=None):
@@ -21,7 +24,7 @@ class BuTTTruck:
         osc_server_port = 9952
         server_host = '192.168.0.38'
         server_port = 9999
-        debug = True
+        debug = False
 
         if config is not None:
             if config.sooperlooper_host is not None:
@@ -33,39 +36,45 @@ class BuTTTruck:
             if config.server_port is not None:
                 server_port = config.server_port
 
-        from concurrent.futures import ThreadPoolExecutor
-        executor = ThreadPoolExecutor(max_workers=5)
+        # from concurrent.futures import ThreadPoolExecutor
+        # executor = ThreadPoolExecutor(max_workers=5)
 
         import subprocess
-        subprocess.Popen('sooperlooper')
+        #BuTTTruck.sooperlooper = subprocess.Popen(['sooperlooper', '-l', '0'])
+
         # OSC for sooperlooper communication
-        OSCServer.start(debug=debug)
-        executor.submit(OSCClient.start(host=sl_host, port=sl_port, debug=debug))
 
-        executor.submit(process_incoming)
+        BuTTTruck.scheduled_tasks.enter(0, 1, periodic, (BuTTTruck.scheduled_tasks, 0.05, process_incoming))
+        BuTTTruck.scheduled_tasks.enter(30, 2, periodic, (BuTTTruck.scheduled_tasks, 30, process_loops))
+        BuTTTruck.scheduled_tasks.enter(60, 2, periodic, (BuTTTruck.scheduled_tasks, 60, resend_missing_chunks))
 
-        from sched import scheduler
-
-        BuTTTruck.s.enter(0, 1, periodic, (BuTTTruck.s, 0.05, process_incoming))
-        BuTTTruck.s.enter(30, 2, periodic, (BuTTTruck.s, 30, process_loops))
-        BuTTTruck.s.enter(60, 2, periodic, (BuTTTruck.s, 60, resend_missing_chunks))
-
-        executor.submit(BuTTTruck.s.run)
-
-        # Client for sending/receiving to peers and public server
         PeerClient.add_peer((server_host, server_port), server=True)
-        executor.submit(PeerClient.run)
 
-        executor.submit(midi.run)
+        BuTTTruck.pool.submit(OSCClient.start(host=sl_host, port=sl_port, debug=debug))
+        BuTTTruck.pool.submit(BuTTTruck.scheduled_tasks.run)
+        BuTTTruck.pool.submit(PeerClient.run)
+        BuTTTruck.pool.submit(midi.run)
+        OSCServer.start(debug=debug)
+        BuTTTruck.sooperlooper = subprocess.Popen(['sooperlooper', '-l', '0'])
 
-        # Main application interface. Midi and/or OSC control
-        # TTTruck.start()
+    @classmethod
+    def exit(cls):
+        if cls.sooperlooper:
+            cls.sooperlooper.kill()
+        #midi.exit()
+        PeerClient.exit()
+        OSCClient.exit()
+        for i in BuTTTruck.scheduled_tasks.queue:
+            cls.scheduled_tasks.cancel(i)
+        cls.pool.shutdown(cancel_futures=True, wait=False)
+
 
 
 global loops
 loops = {}
 global resend_queue
 resend_queue = {}
+
 
 def periodic(scheduler, interval, action, actionargs=()):
     scheduler.enter(interval, 1, periodic,
@@ -74,7 +83,6 @@ def periodic(scheduler, interval, action, actionargs=()):
 
 
 def process_incoming():
-    t = time.time()
     while PeerClient.receive_queue:
         incoming_bytes, peer = PeerClient.receive_queue.pop()
         import json

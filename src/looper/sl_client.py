@@ -13,6 +13,7 @@ class SLClient:
          If engine is there, it will respond with to the given URL and PATH with an OSC message with arguments:
          s:hosturl  s:version  i:loopcount"""
         OSCClient.send_message('/ping', [return_url, '/pingrecieved'])
+        time.sleep(0.5)
 
     @staticmethod
     def hit(loop_number, command):
@@ -537,7 +538,6 @@ class SLClient:
         a value of -1 for loopindex removes last loop, and is the only
         value currently recommended."""
         OSCClient.send_message('/loop_del', type=',i', args=[index])
-        #SLClient.ping()
 
     ###############################
     ###
@@ -563,41 +563,41 @@ class SLClient:
     ###############################
 
     @staticmethod
-    def register_update(control, return_url, return_path, loop_number=-3):
+    def register_update(control, return_path, loop_number=-3):
         """/sl/#/register_update  s:ctrl s:returl s:retpath"""
         OSCClient.send_message(f'/sl/{loop_number}/register_update', [control, return_url, return_path])
 
     @staticmethod
-    def unregister_update(control, return_url, return_path, loop_number=-3):
+    def unregister_update(control, return_path, loop_number=-3):
         """/sl/#/unregister_update  s:ctrl s:returl s:retpath"""
         OSCClient.send_message(f'/sl/{loop_number}/register_update', [control, return_url, return_path])
 
     @staticmethod
-    def register_auto_update(control, return_url, return_path, loop_number=-3, interval=10):
+    def register_auto_update(control, return_path, loop_number=-3, interval=10):
         """/sl/#/register_auto_update  s:ctrl i:ms_interval s:returl s:retpath"""
         OSCClient.send_message(f'/sl/{loop_number}/register_auto_update', [control, interval, return_url, return_path])
 
     @staticmethod
-    def unregister_auto_update(control, return_url, return_path, loop_number=-3):
+    def unregister_auto_update(control, return_path, loop_number=-3):
         """/sl/#/unregister_auto_update  s:ctrl s:returl s:retpath"""
         OSCClient.send_message(f'/sl/{loop_number}/register_auto_update', [control, return_url, return_path])
 
     @staticmethod
-    def register_global_update(control, return_url, return_path):
+    def register_global_update(control, return_path):
         """/register_update  s:ctrl s:returl s:retpath"""
         OSCClient.send_message('/register_update', [control, return_url, return_path])
 
     @staticmethod
-    def unregister_global_update(control, return_url, return_path):
+    def unregister_global_update(control, return_path):
         """/unregister_update  s:ctrl s:returl s:retpath"""
         OSCClient.send_message('/unregister_update', [control, return_url, return_path])
 
     @staticmethod
-    def register_global_auto_update(control, return_url, return_path, interval=10):
+    def register_global_auto_update(control, return_path, interval=10):
         """ /register_auto_update  s:ctrl i:ms_interval s:returl s:retpath"""
         OSCClient.send_message('/register_auto_update', [control, interval, return_url, return_path])
 
     @staticmethod
-    def unregister_global_auto_update(control, return_url, return_path):
+    def unregister_global_auto_update(control, return_path):
         """/unregister_auto_update  s:ctrl s:returl s:retpath"""
         OSCClient.send_message('/unregister_auto_update', [control, return_url, return_path])

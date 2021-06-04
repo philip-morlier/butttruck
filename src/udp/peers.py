@@ -54,18 +54,20 @@ class PeerClient:
             msg = None
             try:
                 if cls.send_queue:
-                    msg = cls.send_queue.pop()
+                    msg, peer_resend = cls.send_queue.pop()
                     print(msg)
-
-                for peer in write:
-                    if msg is None:
-                        cls.send_ping(peer)
-                    elif not peer.is_server():
-                        cls.send_msg(peer, msg)
+                    if peer_resend:
+                        cls.send_msg(peer_resend, msg)
+                    else:
+                        for peer in write:
+                            if msg is None:
+                                cls.send_ping(peer)
+                            elif not peer.is_server():
+                                cls.send_msg(peer, msg)
 
                 for peer in read:
                     cls.receive_data(peer)
-                time.sleep(0.5)
+                time.sleep(0.1)
 
             except Exception as e:
                 print(e, 'we are in peers dot run')
@@ -117,7 +119,7 @@ class PeerClient:
         try:
             peer.sendto(msg.encode(), peer.get_address())
         except Exception as error:
-            print(f"Unable to send_msg {e}")
+            print(f"Unable to send_msg {error}")
 
     @staticmethod
     def send_ping(peer):
@@ -125,3 +127,11 @@ class PeerClient:
         status = peer.get_status()
         message = {'action': 'ping', 'message': {}, 'state': status}
         peer.sendto(json.dumps(message).encode(), peer.get_address())
+
+    @classmethod
+    def exit(cls):
+        cls.receive_queue = None
+        cls.send_queue = None
+        cls.inputs = None
+        cls.outputs = None
+

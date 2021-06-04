@@ -1,20 +1,12 @@
-
-
 from prompt_toolkit import Application
 from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.layout import Layout
 
 from src.looper.sl_client import SLClient
 from src.looper.tttruck import TTTruck
-from src.osc.osc_client import OSCClient
 
 from src.application import BuTTTruck
-from src.udp.wav_slicer import WavSlicer
 
 kb = KeyBindings()
-
-TTT = BuTTTruck()
-TTT.main()
 
 @kb.add('c-q')
 def exit_(event):
@@ -24,29 +16,55 @@ def exit_(event):
     Setting a return value means: quit the event loop that drives the user
     interface and return this value from the `Application.run()` call.
     """
+    BuTTTruck.exit()
     event.app.exit()
 
 @kb.add('r')
 def _(event):
     SLClient.record()
 
+@kb.add('c-r')
+def _(event):
+    TTTruck.loop_rate(2)
+
 @kb.add('n')
 def _(event):
-    TTTruck.new_loop()
+    TTTruck.select_next_loop()
+
+@kb.add('c-p')
+def _(event):
+    SLClient.ping()
+    print(TTTruck.loops)
+    print(TTTruck.loop_index)
+
+@kb.add('c-d')
+def _(event):
+    TTTruck.delete_loop()
+
+@kb.add('c-n')
+def _(event):
+    TTTruck.loop_add()
 
 @kb.add('p')
 def _(event):
     TTTruck.publish_loop()
 
+@kb.add('c')
+def _(event):
+    TTTruck.publish_all_changes()
+
+@kb.add('c-s')
+def _(event):
+    TTTruck.set_sync_source(TTTruck.selected_loop)
+
+@kb.add('c-c')
+def _(event):
+    TTTruck.publish_selected_changes()
+
 @kb.add('z')
 def _(event):
     TTTruck.loop_reverse()
 
-@kb.add('q')
-def _(event):
-    WavSlicer.slice_and_send('sakjsalkdjflds', '/home/Philip/Desktop/tttruck_loop/butttruck/src/udp/test1.wav')
-
-
-
 app = Application(key_bindings=kb, full_screen=True)
+BuTTTruck.main()
 app.run()

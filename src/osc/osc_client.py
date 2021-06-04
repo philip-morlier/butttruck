@@ -49,5 +49,5 @@ class OSCClient:
         osc_process()
 
     @classmethod
-    def stop(cls):
+    def exit(cls):
         cls.running = False
