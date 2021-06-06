@@ -1,3 +1,5 @@
+import random
+
 from prompt_toolkit import Application
 from prompt_toolkit.key_binding import KeyBindings
 
@@ -21,11 +23,11 @@ def exit_(event):
 
 @kb.add('r')
 def _(event):
-    SLClient.record()
+    TTTruck.loop_record()
 
 @kb.add('c-r')
 def _(event):
-    TTTruck.loop_rate(2)
+    TTTruck.loop_rate(random.random() * 4)
 
 @kb.add('n')
 def _(event):
@@ -34,8 +36,6 @@ def _(event):
 @kb.add('c-p')
 def _(event):
     SLClient.ping()
-    print(TTTruck.loops)
-    print(TTTruck.loop_index)
 
 @kb.add('c-d')
 def _(event):
@@ -55,7 +55,7 @@ def _(event):
 
 @kb.add('c-s')
 def _(event):
-    TTTruck.set_sync_source(TTTruck.selected_loop)
+    TTTruck.set_sync_source()
 
 @kb.add('c-c')
 def _(event):

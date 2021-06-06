@@ -27,11 +27,6 @@ class WavSlicer:
     def slice_and_send(name, file=None, chunk_number=None, peer=None):
         wait_time = 100
         count = 0
-        while not os.path.exists(file):
-            time.sleep(0.1)
-            count += 1
-            if count > wait_time:
-                raise Exception(f'File {file} doesnt exist')
 
         if file is None:
             try:

@@ -1,9 +1,25 @@
-import time
+import threading
+
 
 from src.osc.osc_client import OSCClient
 
 return_url = 'localhost:9952'
+timeout = 0.1
+
 class SLClient:
+
+    loops = 0
+    selected_loop = 0
+    cond = threading.Condition()
+    cmd_evt = threading.Event()
+    parameter_evt = threading.Event()
+    global_evt = threading.Event()
+    ping_evt = threading.Event()
+    selection_evt = threading.Event()
+    state_change = threading.Event()
+    state = 'Unknown'
+    sync_source = -1
+    quantize_on = 1
 
     @staticmethod
     def ping():
@@ -12,15 +28,18 @@ class SLClient:
 
          If engine is there, it will respond with to the given URL and PATH with an OSC message with arguments:
          s:hosturl  s:version  i:loopcount"""
+
         OSCClient.send_message('/ping', [return_url, '/pingrecieved'])
-        time.sleep(0.5)
+        SLClient.ping_evt.wait(timeout=timeout)
+        return SLClient.loops
 
     @staticmethod
-    def hit(loop_number, command):
+    def hit(command, loop):
         """""/sl/#/hit s:cmdname
         A single hit only, no press-release action"""
-
-        OSCClient.send_message(f'/sl/{loop_number}/hit', [command])
+        OSCClient.send_message(f'/sl/{loop}/hit', [command])
+        SLClient.state_change.wait(timeout=timeout)
+        return SLClient.state
 
     ##################################################################
     ### Loop commands and parameter gets/sets paths are all prefixed with:
@@ -30,104 +49,105 @@ class SLClient:
     ##################################################################
 
     @staticmethod
-    def record(loop_number=-3):
-        SLClient.hit(loop_number, 'record')
+    def record(loop):
+        return SLClient.hit('record', loop)
 
     @staticmethod
-    def overdub(loop_number=-3):
-        SLClient.hit(loop_number, 'overdub')
+    def overdub(loop):
+        return SLClient.hit('overdub', loop)
 
     @staticmethod
-    def multiply(loop_number=-3):
-        SLClient.hit(loop_number, 'multiply')
+    def multiply(loop):
+        return SLClient.hit('multiply', loop)
 
     @staticmethod
-    def insert(loop_number=-3):
-        SLClient.hit(loop_number, 'insert')
+    def insert(loop):
+        return SLClient.hit('insert', loop)
+
 
     @staticmethod
-    def replace(loop_number=-3):
-        SLClient.hit(loop_number, 'replace')
+    def replace(loop):
+        return SLClient.hit('replace', loop)
 
     @staticmethod
-    def reverse(loop_number=-3):
-        SLClient.hit(loop_number, 'reverse')
+    def reverse(loop):
+        return SLClient.hit('reverse', loop)
 
     @staticmethod
-    def mute(loop_number=-3):
-        SLClient.hit(loop_number, 'mute')
+    def mute(loop):
+        return SLClient.hit('mute', loop)
 
     @staticmethod
-    def undo(loop_number=-3):
-        SLClient.hit(loop_number, 'undo')
+    def undo(loop):
+        return SLClient.hit('undo', loop)
 
     @staticmethod
-    def redo(loop_number=-3):
-        SLClient.hit(loop_number, 'redo')
+    def redo(loop):
+        return SLClient.hit('redo', loop)
 
     @staticmethod
-    def oneshot(loop_number=3):
-        SLClient.hit(loop_number, 'oneshot')
+    def oneshot(loop):
+        return SLClient.hit('oneshot', loop)
 
     @staticmethod
-    def trigger(loop_number=-3):
-        SLClient.hit(loop_number, 'trigger')
+    def trigger(loop):
+        return SLClient.hit('trigger', loop)
 
     @staticmethod
-    def substitute(loop_number=-3):
-        SLClient.hit(loop_number, 'substitute')
+    def substitute(loop):
+        return SLClient.hit('substitute', loop)
 
     @staticmethod
-    def undo_all(loop_number=-3):
-        SLClient.hit(loop_number, 'undo_all')
+    def undo_all(loop):
+        return SLClient.hit('undo_all', loop)
 
     @staticmethod
-    def redo_all(loop_number=-3):
-        SLClient.hit(loop_number, 'redo_all')
+    def redo_all(loop):
+        return SLClient.hit('redo_all', loop)
 
     @staticmethod
-    def mute_on(loop_number=-3):
-        SLClient.hit(loop_number, 'mute_on')
+    def mute_on(loop):
+        return SLClient.hit('mute_on', loop)
 
     @staticmethod
-    def mute_off(loop_number=-3):
-        SLClient.hit(loop_number, 'mute_off')
+    def mute_off(loop):
+        return SLClient.hit('mute_off', loop)
 
     @staticmethod
-    def solo(loop_number=-3):
-        SLClient.hit(loop_number, 'solo')
+    def solo(loop):
+        return SLClient.hit('solo', loop)
 
     @staticmethod
-    def pause(loop_number=-3):
-        SLClient.hit(loop_number, 'pause')
+    def pause(loop):
+        return SLClient.hit('pause', loop)
 
     @staticmethod
-    def solo_next(loop_number=-3):
-        SLClient.hit(loop_number, 'solo_next')
+    def solo_next(loop):
+        return SLClient.hit('solo_next', loop)
 
     @staticmethod
-    def solo_prev(loop_number=-3):
-        SLClient.hit(loop_number, 'solo_prev')
+    def solo_prev(loop):
+        return SLClient.hit('solo_prev', loop)
 
     @staticmethod
-    def record_solo(loop_number=-3):
-        SLClient.hit(loop_number, 'record_solo')
+    def record_solo(loop):
+        return SLClient.hit('record_solo', loop)
 
     @staticmethod
-    def record_solo_next(loop_number=-3):
-        SLClient.hit(loop_number, 'record_solo_next')
+    def record_solo_next(loop):
+        return SLClient.hit('record_solo_next', loop)
 
     @staticmethod
-    def record_solo_prev(loop_number=-3):
-        SLClient.hit(loop_number, 'record_solo_prev')
+    def record_solo_prev(loop):
+        return SLClient.hit('record_solo_prev', loop)
 
     @staticmethod
-    def set_sync_pos(loop_number=-3):
-        SLClient.hit(loop_number, 'set_sync_pos')
+    def set_sync_pos(loop):
+        return SLClient.hit('set_sync_pos', loop)
 
     @staticmethod
-    def reset_sync_pos(loop_number=-3):
-        SLClient.hit(loop_number, 'reset_sync_pos')
+    def reset_sync_pos(loop):
+        return SLClient.hit('reset_sync_pos', loop)
 
     #######################################################
     # SET PARAMETER VALUES
@@ -135,158 +155,160 @@ class SLClient:
     #   To set a parameter for a loop.
     #######################################################
     @staticmethod
-    def set_parameter(value, loop_number):
-        OSCClient.send_message(f'/sl/{loop_number}/set', value)
+    def set_parameter(value, loop):
+        OSCClient.send_message(f'/sl/{loop}/set', value)
+        return SLClient.get_parameter(value[0], loop)
 
     @staticmethod
-    def set_rec_thresh(value, loop_number=-3):
+    def set_rec_thresh(value, loop):
         """  rec_thresh  	:: expected range is 0 -> 1"""
-        SLClient.set_parameter(['rec_thresh', value], loop_number)
+        SLClient.set_parameter(['rec_thresh', value], loop)
 
     @staticmethod
-    def set_feedback(value, loop_number=-3):
+    def set_feedback(value, loop):
         """  feedback    	:: range 0 -> 1"""
-        SLClient.set_parameter(['feedback', value], loop_number)
+        SLClient.set_parameter(['feedback', value], loop)
 
     @staticmethod
-    def set_dry(value, loop_number=-3):
+    def set_dry(value, loop):
         """  dry         	:: range 0 -> 1"""
-        SLClient.set_parameter(['dry', value], loop_number)
+        SLClient.set_parameter(['dry', value], loop)
 
     @staticmethod
-    def set_wet(value, loop_number=-3):
+    def set_wet(value, loop):
         """  wet         	:: range 0 -> 1"""
-        SLClient.set_parameter(['wet', value], loop_number)
+        SLClient.set_parameter(['wet', value], loop)
 
     @staticmethod
-    def set_input_gain(value, loop_number=-3):
+    def set_input_gain(value, loop):
         """  input_gain    :: range 0 -> 1"""
-        SLClient.set_parameter(['input_gain', value], loop_number)
+        SLClient.set_parameter(['input_gain', value], loop)
 
     @staticmethod
-    def set_rate(value, loop_number=-3):
+    def set_rate(value, loop):
         """  rate        	:: range 0.25 -> 4.0"""
-        SLClient.set_parameter(['rate', value], loop_number)
+        SLClient.set_parameter(['rate', value], loop)
 
     @staticmethod
-    def set_scratch_pos(value, loop_number=-3):
+    def set_scratch_pos(value, loop):
         """  scratch_pos  	 :: 0 -> 1 """
-        SLClient.set_parameter(['scratch_pos', value], loop_number)
+        SLClient.set_parameter(['scratch_pos', value], loop)
 
     @staticmethod
-    def set_delay_trigger(value, loop_number=-3):
+    def set_delay_trigger(value, loop):
         """  delay_trigger  :: any changes"""
-        SLClient.set_parameter(['delay_trigger', value], loop_number)
+        SLClient.set_parameter(['delay_trigger', value], loop)
 
     @staticmethod
-    def set_quantize(value, loop_number=-3):
+    def set_quantize(value, loop):
         """  quantize       :: 0 = off, 1 = cycle, 2 = 8th, 3 = loop"""
-        SLClient.set_parameter(['quantize', value], loop_number)
+        SLClient.quantize_on = value
+        return SLClient.set_parameter(['quantize', value], loop)
 
     @staticmethod
-    def set_round(value, loop_number=-3):
+    def set_round(value, loop):
         """  round          :: 0 = off,  not 0 = on """
-        SLClient.set_parameter(['round', value], loop_number)
+        SLClient.set_parameter(['round', value], loop)
 
     @staticmethod
-    def set_redo_is_tap(value, loop_number=-3):
+    def set_redo_is_tap(value, loop):
         """  redo_is_tap    :: 0 = off,  not 0 = on """
-        SLClient.set_parameter(['redo_is_tap', value], loop_number)
+        SLClient.set_parameter(['redo_is_tap', value], loop)
 
     @staticmethod
-    def set_sync(value, loop_number=-3):
+    def set_sync(value, loop):
         """  sync           :: 0 = off,  not 0 = on """
-        SLClient.set_parameter(['sync', value], loop_number)
+        return SLClient.set_parameter(['sync', value], loop)
 
     @staticmethod
-    def set_playback_sync(value, loop_number=-3):
+    def set_playback_sync(value, loop):
         """  playback_sync  :: 0 = off,  not 0 = on """
-        SLClient.set_parameter(['playback_sync', value], loop_number)
+        SLClient.set_parameter(['playback_sync', value], loop)
 
     @staticmethod
-    def set_use_rate(value, loop_number=-3):
+    def set_use_rate(value, loop):
         """  use_rate       :: 0 = off,  not 0 = on """
-        SLClient.set_parameter(['use_rate', value], loop_number)
+        SLClient.set_parameter(['use_rate', value], loop)
 
     @staticmethod
-    def set_fade_samples(value, loop_number=-3):
+    def set_fade_samples(value, loop):
         """  fade_samples   :: 0 -> ..."""
-        SLClient.set_parameter(['fade_samples', value], loop_number)
+        SLClient.set_parameter(['fade_samples', value], loop)
 
     @staticmethod
-    def set_use_feedback_play(value, loop_number=-3):
+    def set_use_feedback_play(value, loop):
         """  use_feedback_play   :: 0 = off,  not 0 = on"""
-        SLClient.set_parameter(['use_feedback_play', value], loop_number)
+        SLClient.set_parameter(['use_feedback_play', value], loop)
 
     @staticmethod
-    def set_use_common_ins(value, loop_number=-3):
+    def set_use_common_ins(value, loop):
         """  use_common_ins   :: 0 = off,  not 0 = on """
-        SLClient.set_parameter(['use_common_ins', value], loop_number)
+        SLClient.set_parameter(['use_common_ins', value], loop)
 
     @staticmethod
-    def set_use_common_outs(value, loop_number=-3):
+    def set_use_common_outs(value, loop):
         """  use_common_outs   :: 0 = off,  not 0 = on """
-        SLClient.set_parameter(['use_common_outs', value], loop_number)
+        SLClient.set_parameter(['use_common_outs', value], loop)
 
     @staticmethod
-    def set_relative_sync(value, loop_number=-3):
+    def set_relative_sync(value, loop):
         """  relative_sync   :: 0 = off, not 0 = on"""
-        SLClient.set_parameter(['relative_sync', value], loop_number)
+        SLClient.set_parameter(['relative_sync', value], loop)
 
     @staticmethod
-    def set_use_safety_feedback(value, loop_number=-3):
+    def set_use_safety_feedback(value, loop):
         """  use_safety_feedback   :: 0 = off, not 0 = on"""
-        SLClient.set_parameter(['use_safety_feedback', value], loop_number)
+        SLClient.set_parameter(['use_safety_feedback', value], loop)
 
     @staticmethod
-    def set_pan_1(value, loop_number=-3):
+    def set_pan_1(value, loop):
         """  pan_1         	:: range 0 -> 1"""
-        SLClient.set_parameter(['pan_1', value], loop_number)
+        SLClient.set_parameter(['pan_1', value], loop)
 
     @staticmethod
-    def set_pan_2(value, loop_number=-3):
+    def set_pan_2(value, loop):
         """  pan_2         	:: range 0 -> 1"""
-        SLClient.set_parameter(['pan_2', value], loop_number)
+        SLClient.set_parameter(['pan_2', value], loop)
 
     @staticmethod
-    def set_pan_3(value, loop_number=-3):
+    def set_pan_3(value, loop):
         """  pan_3         	:: range 0 -> 1"""
-        SLClient.set_parameter(['pan_3', value], loop_number)
+        SLClient.set_parameter(['pan_3', value], loop)
 
     @staticmethod
-    def set_pan_4(value, loop_number=-3):
+    def set_pan_4(value, loop):
         """  pan_4         	:: range 0 -> 1"""
-        SLClient.set_parameter(['pan_4', value], loop_number)
+        SLClient.set_parameter(['pan_4', value], loop)
 
     @staticmethod
-    def set_input_latency(value, loop_number=-3):
+    def set_input_latency(value, loop):
         """  input_latency :: range 0 -> ..."""
-        SLClient.set_parameter(['input_latency', value], loop_number)
+        SLClient.set_parameter(['input_latency', value], loop)
 
     @staticmethod
-    def set_output_latency(value, loop_number=-3):
+    def set_output_latency(value, loop):
         """  output_latency :: range 0 -> ..."""
-        SLClient.set_parameter(['output_latency', value], loop_number)
+        SLClient.set_parameter(['output_latency', value], loop)
 
     @staticmethod
-    def set_trigger_latency(value, loop_number=-3):
+    def set_trigger_latency(value, loop):
         """  trigger_latency :: range 0 -> ..."""
-        SLClient.set_parameter(['trigger_latency', value], loop_number)
+        SLClient.set_parameter(['trigger_latency', value], loop)
 
     @staticmethod
-    def set_autoset_latency(value, loop_number=-3):
+    def set_autoset_latency(value, loop):
         """autoset_latency  :: 0 = off, not 0 = on"""
-        SLClient.set_parameter(['autoset_latency', value], loop_number)
+        SLClient.set_parameter(['autoset_latency', value], loop)
 
     @staticmethod
-    def set_mute_quantized(value, loop_number=-3):
+    def set_mute_quantized(value, loop):
         """  mute_quantized  :: 0 = off, not 0 = on"""
-        SLClient.set_parameter(['mute_quantized', value], loop_number)
+        return SLClient.set_parameter(['mute_quantized', value], loop)
 
     @staticmethod
     def set_overdub_quantized(value, loop_number=-3):
         """  overdub_quantized :: 0 == off, not 0 = on"""
-        SLClient.set_parameter(['overdub_quantized', value], loop_number)
+        SLClient.set_parameter(['overdub_quantized', value])
 
     ###########################################
     # GET PARAMETER VALUES
@@ -299,62 +321,67 @@ class SLClient:
               11: 'Scratching', 12: 'OneShot', 13: 'Substitute', 14: 'Paused', 20: 'OffMuted'}
 
     @staticmethod
-    def get_parameter(control, loop_number):
+    def get_parameter(control, loop, return_path=None):
         """/sl/#/get s:control  s:return_url  s: return_path
         Which returns an OSC message to the given return url and path with the arguments:
         i: loop_index s: control f: value
         Where control is one of the above or: state::"""
-
-        OSCClient.send_message(f'/sl/{loop_number}/get', [control, return_url,
-                                                          f'/parameter/{loop_number}/{control}'])
-
-    @staticmethod
-    def get_next_state(loop_number=-3):
-        SLClient.get_parameter('next_state', loop_number)
+        return_path = (f'/parameter/{loop}/{control}' if return_path is None else return_path)
+        OSCClient.send_message(f'/sl/{loop}/get', [control, return_url, return_path])
+        SLClient.parameter_evt.wait(timeout)
 
     @staticmethod
-    def get_loop_len(loop_number=-3):
-        SLClient.get_parameter('loop_len', loop_number)
+    def get_next_state(loop):
+        SLClient.get_parameter('next_state', loop)
 
     @staticmethod
-    def get_loop_pos(loop_number=-3):
-        SLClient.get_parameter('loop_pos', loop_number)
+    def get_state(loop):
+        SLClient.get_parameter('state', loop, '/state')
+        return SLClient.state
 
     @staticmethod
-    def get_cycle_len(loop_number=-3):
-        SLClient.get_parameter('cycle_len', loop_number)
+    def get_loop_len(loop):
+        SLClient.get_parameter('loop_len', loop)
 
     @staticmethod
-    def get_free_time(loop_number=-3):
-        SLClient.get_parameter('free_time', loop_number)
+    def get_loop_pos(loop):
+        SLClient.get_parameter('loop_pos', loop)
 
     @staticmethod
-    def get_total_time(loop_number=-3):
-        SLClient.get_parameter('total_time', loop_number)
+    def get_cycle_len(loop):
+        SLClient.get_parameter('cycle_len', loop)
 
     @staticmethod
-    def get_rate_output(loop_number=-3):
-        SLClient.get_parameter('rate_output', loop_number)
+    def get_free_time(loop):
+        SLClient.get_parameter('free_time', loop)
 
     @staticmethod
-    def get_in_peak_meter(loop_number=-3):
+    def get_total_time(loop):
+        SLClient.get_parameter('total_time', loop)
+
+    @staticmethod
+    def get_rate_output(loop):
+        SLClient.get_parameter('rate_output', loop)
+
+    @staticmethod
+    def get_in_peak_meter(loop):
         """:: absolute float sample value 0.0 -> 1.0 (or higher)"""
-        SLClient.get_parameter('in_peak_meter', loop_number)
+        SLClient.get_parameter('in_peak_meter', loop)
 
     @staticmethod
-    def get_out_peak_meter(loop_number=-3):
+    def get_out_peak_meter(loop):
         """:: absolute float sample value 0.0 -> 1.0 (or higher)"""
-        SLClient.get_parameter('out_peak_meter', loop_number)
+        SLClient.get_parameter('out_peak_meter', loop)
 
     @staticmethod
-    def get_is_soloed(loop_number=-3):
+    def get_is_soloed(loop):
         """is_soloed:: 1 if soloed, 0 if not"""
-        SLClient.get_parameter('is_soloed', loop_number)
+        SLClient.get_parameter('is_soloed', loop)
 
     @staticmethod
-    def get_waiting(loop_number=-3):
+    def get_waiting(loop):
         """waiting:: 1 if waiting, 0 if not"""
-        SLClient.get_parameter('waiting', loop_number)
+        SLClient.get_parameter('waiting', loop)
 
     ###########################
     ###
@@ -398,15 +425,18 @@ class SLClient:
     def _set_global_parameter(parameter, value):
         """/set  s:param  f:value"""
         OSCClient.send_message('/set', type=',sf', args=[parameter, float(value)])
+        SLClient._get_global_parameter(parameter)
 
     @staticmethod
-    def _get_global_parameter(parameter, return_path):
+    def _get_global_parameter(parameter):
         """ /get  s:param  s:return_url  s:retpath"""
-        OSCClient.send_message('/get', type=',sss', args=[parameter, return_url, return_path])
+        OSCClient.send_message('/get', type=',sss', args=[parameter, return_url, f'/global/parameter/{parameter}'])
+        SLClient.selection_evt.wait(timeout)
+        #SLClient.global_evt.wait()
 
     @staticmethod
     def get_tempo():
-        SLClient._get_global_parameter('/global/tempo', '/global/parameter/tempo')
+        SLClient._get_global_parameter('/global/tempo')
 
     @staticmethod
     def set_tempo(tempo):
@@ -431,7 +461,7 @@ class SLClient:
 
     @staticmethod
     def global_get_wet():
-        SLClient._get_global_parameter('wet', '/global/wet')
+        SLClient._get_global_parameter('wet')
 
     @staticmethod
     def global_set_wet(wet):
@@ -440,7 +470,7 @@ class SLClient:
 
     @staticmethod
     def get_input_gain():
-        SLClient._get_global_parameter('input_gain', '/global/input_gain')
+        SLClient._get_global_parameter('input_gain')
 
     @staticmethod
     def set_input_gain(input_gain):
@@ -449,16 +479,17 @@ class SLClient:
 
     @staticmethod
     def get_sync_source():
-        SLClient._get_global_parameter('sync_source', '/global/sync_source')
+        SLClient._get_global_parameter('sync_source')
 
     @staticmethod
     def set_sync_source(sync_source):
         """sync_source  :: -3 = internal,  -2 = midi, -1 = jack, 0 = none, # > 0 = loop number (1 indexed)"""
         SLClient._set_global_parameter('sync_source', sync_source)
+        SLClient.sync_source = sync_source
 
     @staticmethod
     def get_tap_tempo():
-        SLClient._get_global_parameter('tap_tempo', '/global/tap_tempo')
+        SLClient._get_global_parameter('tap_tempo')
 
     @staticmethod
     def set_tap_tempo(tap_tempo):
@@ -467,7 +498,7 @@ class SLClient:
 
     @staticmethod
     def get_save_loop():
-        SLClient._get_global_parameter('save_loop', '/global/save_loop')
+        SLClient._get_global_parameter('save_loop')
 
     @staticmethod
     def set_save_loop(save_loop):
@@ -476,7 +507,7 @@ class SLClient:
 
     @staticmethod
     def get_select_next_loop():
-        SLClient._get_global_parameter('select_next_loop', '/global/select_next_loop')
+        SLClient._get_global_parameter('select_next_loop')
 
     @staticmethod
     def set_select_next_loop():
@@ -486,7 +517,7 @@ class SLClient:
 
     @staticmethod
     def get_select_prev_loop():
-        SLClient._get_global_parameter('select_prev_loop', '/global/select_prev_loop')
+        SLClient._get_global_parameter('select_prev_loop')
 
     @staticmethod
     def set_select_prev_loop(select_prev_loop):
@@ -495,7 +526,7 @@ class SLClient:
 
     @staticmethod
     def get_select_all_loops():
-        SLClient._get_global_parameter('select_all_loops', '/global/select_all_loops')
+        SLClient._get_global_parameter('select_all_loops')
 
     @staticmethod
     def set_select_all_loops(select_all_loops):
@@ -504,16 +535,20 @@ class SLClient:
 
     @staticmethod
     def get_selected_loop_num():
-        SLClient._get_global_parameter('selected_loop_num', '/global/selected_loop_num')
+        SLClient._get_global_parameter('selected_loop_num')
+        return SLClient.selected_loop
+
 
     @staticmethod
     def set_selected_loop_num(loop_num):
         """selected_loop_num   :: -1 = all, 0->N selects loop instances (first loop is 0, etc)"""
         SLClient._set_global_parameter('selected_loop_num', loop_num)
+        return SLClient.get_selected_loop_num()
+
 
     @staticmethod
     def get_output_midi_clock():
-        SLClient._get_global_parameter('output_midi_clock', '/global/output_midi_clock')
+        SLClient._get_global_parameter('output_midi_clock')
 
     @staticmethod
     def set_output_midi_clock(output_midi_clock):
@@ -563,24 +598,24 @@ class SLClient:
     ###############################
 
     @staticmethod
-    def register_update(control, return_path, loop_number=-3):
+    def register_update(control, return_path, loop):
         """/sl/#/register_update  s:ctrl s:returl s:retpath"""
-        OSCClient.send_message(f'/sl/{loop_number}/register_update', [control, return_url, return_path])
+        OSCClient.send_message(f'/sl/{loop}/register_update', [control, return_url, return_path])
 
     @staticmethod
-    def unregister_update(control, return_path, loop_number=-3):
+    def unregister_update(control, return_path, loop):
         """/sl/#/unregister_update  s:ctrl s:returl s:retpath"""
-        OSCClient.send_message(f'/sl/{loop_number}/register_update', [control, return_url, return_path])
+        OSCClient.send_message(f'/sl/{loop}/register_update', [control, return_url, return_path])
 
     @staticmethod
-    def register_auto_update(control, return_path, loop_number=-3, interval=10):
+    def register_auto_update(control, return_path, loop, interval=10):
         """/sl/#/register_auto_update  s:ctrl i:ms_interval s:returl s:retpath"""
-        OSCClient.send_message(f'/sl/{loop_number}/register_auto_update', [control, interval, return_url, return_path])
+        OSCClient.send_message(f'/sl/{loop}/register_auto_update', [control, interval, return_url, return_path])
 
     @staticmethod
-    def unregister_auto_update(control, return_path, loop_number=-3):
+    def unregister_auto_update(control, return_path, loop):
         """/sl/#/unregister_auto_update  s:ctrl s:returl s:retpath"""
-        OSCClient.send_message(f'/sl/{loop_number}/register_auto_update', [control, return_url, return_path])
+        OSCClient.send_message(f'/sl/{loop}/unregister_auto_update', [control, return_url, return_path])
 
     @staticmethod
     def register_global_update(control, return_path):

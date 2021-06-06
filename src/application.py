@@ -36,32 +36,26 @@ class BuTTTruck:
             if config.server_port is not None:
                 server_port = config.server_port
 
-        # from concurrent.futures import ThreadPoolExecutor
-        # executor = ThreadPoolExecutor(max_workers=5)
-
         import subprocess
-        #BuTTTruck.sooperlooper = subprocess.Popen(['sooperlooper', '-l', '0'])
-
-        # OSC for sooperlooper communication
+        BuTTTruck.sooperlooper = subprocess.Popen(['sooperlooper', '-l', '0'])
 
         BuTTTruck.scheduled_tasks.enter(0, 1, periodic, (BuTTTruck.scheduled_tasks, 0.05, process_incoming))
         BuTTTruck.scheduled_tasks.enter(30, 2, periodic, (BuTTTruck.scheduled_tasks, 30, process_loops))
         BuTTTruck.scheduled_tasks.enter(60, 2, periodic, (BuTTTruck.scheduled_tasks, 60, resend_missing_chunks))
 
         PeerClient.add_peer((server_host, server_port), server=True)
+        PeerClient.add_peer((server_host, server_port), server=False)
 
         BuTTTruck.pool.submit(OSCClient.start(host=sl_host, port=sl_port, debug=debug))
         BuTTTruck.pool.submit(BuTTTruck.scheduled_tasks.run)
         BuTTTruck.pool.submit(PeerClient.run)
         BuTTTruck.pool.submit(midi.run)
         OSCServer.start(debug=debug)
-        BuTTTruck.sooperlooper = subprocess.Popen(['sooperlooper', '-l', '0'])
 
     @classmethod
     def exit(cls):
         if cls.sooperlooper:
             cls.sooperlooper.kill()
-        #midi.exit()
         PeerClient.exit()
         OSCClient.exit()
         for i in BuTTTruck.scheduled_tasks.queue:
@@ -117,7 +111,6 @@ def resend_missing_chunks():
     for peer, state in resend_queue.items():
         for name, chunks in state.items():
             for chunk in chunks:
-                print("BUH", chunk, peer)
                 WavSlicer.slice_and_send(name, chunk, peer=peer)
 
 
