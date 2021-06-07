@@ -20,24 +20,22 @@ class BuTTTruck:
     def main(config=None):
         sl_host = '127.0.0.1'
         sl_port = 9951
-        osc_server_host = '127.0.0.1'
-        osc_server_port = 9952
         server_host = '192.168.0.38'
         server_port = 9999
         debug = False
         peers = None
 
         if config is not None:
-            if config.sooperlooper_host is not None:
-                sl_host = config.sooperlooper_host
-            if config.sooperlooper_port is not None:
-                sl_port = config.sooperlooper_host
-            if config.server_host is not None:
-                server_host = config.server_host
-            if config.server_port is not None:
-                server_port = config.server_port
-            if config.peers is not None:
-                peers = config.peers
+            if config.get('sooperlooper_host', None) is not None:
+                sl_host = config['sooperlooper_host']
+            if config.get('sooperlooper_port', None) is not None:
+                sl_port = config['sooperlooper_host']
+            if config.get('server_host', None) is not None:
+                server_host = config['server_host']
+            if config.get('server_port', None) is not None:
+                server_port = config['server_port']
+            if config.get('peers', None) is not None:
+                peers = config['peers']
 
         import subprocess
         BuTTTruck.sooperlooper = subprocess.Popen(['sooperlooper', '-l', '0'])
@@ -71,7 +69,6 @@ class BuTTTruck:
         cls.pool.shutdown(cancel_futures=True, wait=False)
 
 
-
 global loops
 loops = {}
 global resend_queue
@@ -95,6 +92,7 @@ def process_incoming():
                 if action == 'ping':
                     state = msg['state']
                     resend_queue[peer] = state
+                    print(f'Current state: {state}, resend_queue: {resend_queue[peer]}')
                 if action == 'loop_add':
                     message = msg['message']
                     loop_name = message['loop_name']
@@ -106,11 +104,9 @@ def process_incoming():
                         loops[loop_name].pop(message['current_chunk'] - 1)
                         loops[loop_name].insert(message['current_chunk'] - 1, message['chunk_body'].encode('latin1'))
                 if action == 'loop_modify':
-                    message = msg['msg']
+                    message = msg['message']
                     loop = message['loop_name']
-                    func = message['func']
-                    parameters = message['parameters']
-                    getattr(TTTruck, func)(loop, parameters)
+                    # TODO: apply {change:value} to loop
         except Exception as e:
             print(f'Unable to receive data {msg} from: {peer.get_address()}')
 
@@ -118,6 +114,7 @@ def process_incoming():
 def resend_missing_chunks():
     for peer, state in resend_queue.items():
         for name, chunks in state.items():
+            print(f'resending {peer}, {name}, {chunks}')
             for chunk in chunks:
                 WavSlicer.slice_and_send(name, chunk, peer=peer)
 
@@ -130,7 +127,7 @@ def process_loops():
             completed.append((k, v))
     while completed:
         c = completed.pop()
-        TTTruck.write_wav(c)
+        TTTruck._write_wav(c)
         loops.pop(c[0])
 
 

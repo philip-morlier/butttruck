@@ -1,7 +1,6 @@
 import random
 import string
 import tempfile
-import threading
 import time
 
 from src.looper.sl_client import SLClient
@@ -21,30 +20,6 @@ class TTTruck:
         SLClient.record(loop)
 
     @classmethod
-    def register_loop_updates(cls, loop):
-        SLClient.register_auto_update('loop_pos', '/test', loop, interval=100)
-        # SLClient.register_auto_update('cycle_len', '/test', interval=1, loop_number=cls.loops)
-        # SLClient.register_auto_update('free_time', '/test', interval=1, loop_number=cls.loops)
-        # SLClient.register_auto_update('total_time', '/test', interval=1, loop_number=cls.loops)
-        # SLClient.register_auto_update('waiting', '/test', interval=1, loop_number=cls.loops)
-        SLClient.register_auto_update('state', '/state', loop)
-        # SLClient.register_auto_update('next_state', '/test', interval=1, loop_number=cls.loops)
-        SLClient.register_auto_update('save_loop', '/test', loop)
-        SLClient.register_auto_update('load_loop', '/test', loop)
-
-    @classmethod
-    def unregister_loop_updates(cls, loop):
-        SLClient.unregister_auto_update('loop_pos', '/test', loop)
-        # SLClient.register_auto_update('cycle_len', '/test', interval=1, loop_number=cls.loops)
-        # SLClient.register_auto_update('free_time', '/test', interval=1, loop_number=cls.loops)
-        # SLClient.register_auto_update('total_time', '/test', interval=1, loop_number=cls.loops)
-        # SLClient.register_auto_update('waiting', '/test', interval=1, loop_number=cls.loops)
-        SLClient.unregister_auto_update('state', '/test', loop)
-        # SLClient.register_auto_update('next_state', '/test', interval=1, loop_number=cls.loops)
-        SLClient.unregister_auto_update('save_loop', '/test', loop)
-        SLClient.unregister_auto_update('load_loop', '/test', loop)
-
-    @classmethod
     def delete_loop(cls):
         selected = cls.get_selected_loop()
         SLClient.loop_del(selected)
@@ -54,7 +29,7 @@ class TTTruck:
         else:
             cls.loop_index.pop(selected)
         loop_number = cls.get_number_of_loops()
-        cls.loop_index = cls.update_loop_index(loop_number)
+        cls.loop_index = cls._update_loop_index(loop_number)
 
     @classmethod
     def get_number_of_loops(cls):
@@ -117,14 +92,6 @@ class TTTruck:
                 cls.changes[name]['reverse'] = 0
 
     @classmethod
-    def _get_selected_loop_name(cls, loop_number):
-        try:
-            name = cls.loop_index[loop_number]
-            return name
-        except KeyError:
-            print(f'{loop_number} is not in the index: {cls.loop_index}')
-
-    @classmethod
     def loop_rate(cls, rate):
         loop = cls.get_selected_loop()
         name = cls._get_selected_loop_name(loop)
@@ -132,10 +99,6 @@ class TTTruck:
         if cls.changes.get(name, None) is None:
             cls.changes[name] = {}
         cls.changes[name] = {'rate': rate}
-
-    @staticmethod
-    def _generate_name():
-        return ''.join(random.choices(string.ascii_lowercase + string.digits, k=20))
 
     @classmethod
     def loop_add(cls):
@@ -159,18 +122,72 @@ class TTTruck:
 
     @classmethod
     def loop_load(cls, name):
-        loop = cls.loop_add()
+        existing = cls._index_contains(name)
+        if existing:
+            loop = existing
+        else:
+            loop = cls.loop_add()
         SLClient.load_loop(loop, cls.loop_dir + '/' + name + '.wav')
         if SLClient.get_state(loop) != 'Playing':
             SLClient.pause(loop)
 
+    @classmethod
+    def callback(cls, x, y, z):
+        try:
+            getattr(TTTruck, y)(z)
+        except Exception as e:
+            print(e)
 
     @classmethod
-    def get_loop_index(cls, name):
-        return cls.loop_index[name]
+    def select_loop(cls, loop_num):
+        cls._unregister_loop_updates(SLClient.selected_loop)
+        SLClient.set_selected_loop_num(loop_num)
+        cls._register_loop_updates(loop_num)
 
     @classmethod
-    def update_loop_index(cls, loop_number):
+    def select_next_loop(cls):
+        selected = cls.get_selected_loop()
+        num_loops = cls.get_number_of_loops()
+        if selected < num_loops:
+            cls.select_loop(selected + 1)
+        else:
+            cls.select_loop(0)
+
+    @classmethod
+    def _register_loop_updates(cls, loop):
+        SLClient.register_auto_update('loop_pos', '/test', loop, interval=100)
+        # SLClient.register_auto_update('cycle_len', '/test', interval=1, loop_number=cls.loops)
+        # SLClient.register_auto_update('free_time', '/test', interval=1, loop_number=cls.loops)
+        # SLClient.register_auto_update('total_time', '/test', interval=1, loop_number=cls.loops)
+        # SLClient.register_auto_update('waiting', '/test', interval=1, loop_number=cls.loops)
+        SLClient.register_auto_update('state', '/state', loop)
+        # SLClient.register_auto_update('next_state', '/test', interval=1, loop_number=cls.loops)
+        SLClient.register_auto_update('save_loop', '/test', loop)
+        SLClient.register_auto_update('load_loop', '/test', loop)
+
+    @classmethod
+    def _unregister_loop_updates(cls, loop):
+        SLClient.unregister_auto_update('loop_pos', '/test', loop)
+        # SLClient.register_auto_update('cycle_len', '/test', interval=1, loop_number=cls.loops)
+        # SLClient.register_auto_update('free_time', '/test', interval=1, loop_number=cls.loops)
+        # SLClient.register_auto_update('total_time', '/test', interval=1, loop_number=cls.loops)
+        # SLClient.register_auto_update('waiting', '/test', interval=1, loop_number=cls.loops)
+        SLClient.unregister_auto_update('state', '/test', loop)
+        # SLClient.register_auto_update('next_state', '/test', interval=1, loop_number=cls.loops)
+        SLClient.unregister_auto_update('save_loop', '/test', loop)
+        SLClient.unregister_auto_update('load_loop', '/test', loop)
+
+    @classmethod
+    def _index_contains(cls, name):
+        print(cls.loop_index)
+        for k, v in cls.loop_index.items():
+            print(k, v)
+            if v == name:
+                return k
+        return False
+
+    @classmethod
+    def _update_loop_index(cls, loop_number):
         updated = {}
         for loop_index, loop_name in cls.loop_index.items():
             if loop_index >= loop_number - 1 and loop_index > 0:
@@ -183,36 +200,26 @@ class TTTruck:
         return updated
 
     @classmethod
-    def callback(cls, x, y, z):
-        try:
-            getattr(TTTruck, y)(z)
-        except Exception as e:
-            print(e)
-
-    @classmethod
-    def select_loop(cls, loop_num):
-        cls.unregister_loop_updates(SLClient.selected_loop)
-        SLClient.set_selected_loop_num(loop_num)
-        cls.register_loop_updates(loop_num)
-
-    @classmethod
-    def select_next_loop(cls):
-        selected = cls.get_selected_loop()
-        num_loops = cls.get_number_of_loops()
-        if selected < num_loops:
-            cls.select_loop(selected + 1)
-        else:
-            cls.select_loop(0)
-
-    @classmethod
-    def delete_all_loops(cls):
+    def _delete_all_loops(cls):
         num_loops = cls.get_number_of_loops()
         while num_loops >= 0:
             SLClient.set_selected_loop_num(0)
             cls.delete_loop()
 
     @classmethod
-    def write_wav(cls, wav):
+    def _get_selected_loop_name(cls, loop_number):
+        try:
+            name = cls.loop_index[loop_number]
+            return name
+        except KeyError:
+            print(f'{loop_number} is not in the index: {cls.loop_index}')
+
+    @staticmethod
+    def _generate_name():
+        return ''.join(random.choices(string.ascii_lowercase + string.digits, k=20))
+
+    @classmethod
+    def _write_wav(cls, wav):
         name = wav[0]
         bytes = b''.join(wav[1])
         with open(cls.loop_dir + '/' + name + '.wav', 'wb+') as f:

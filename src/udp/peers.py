@@ -55,12 +55,13 @@ class PeerClient:
             try:
                 if cls.send_queue:
                     msg, peer_resend = cls.send_queue.pop()
-                    print(msg)
                     if peer_resend:
+                        print(f'resending to {peer_resend.get_address()}, {msg}')
                         cls.send_msg(peer_resend, msg)
                     else:
                         for peer in write:
                             if msg is None or peer.is_server():
+                                # TODO: ping should be at a much slower rate
                                 cls.send_ping(peer)
                             else:
                                 cls.send_msg(peer, msg)
@@ -90,15 +91,20 @@ class PeerClient:
             loop_name = message['loop_name']
             received = message['current_chunk']
             total = message['number_of_chunks']
+            print(f'Updating status M: {message}, L: {loop_name}, R: {received}, T: {total}')
             if peer.status.get(loop_name, None) is None:
                 peer.status[loop_name] = [i for i in range(1, total + 1)]
+                print(f'Created new status: {peer.status}')
                 peer.status[loop_name].remove(received)
             elif len(peer.status[loop_name]) == 0:
                 peer.status.pop(loop_name)
+                print(f'removing finished status: {loop_name} from: {peer.status}')
             else:
+                print(f'removing chunk {received} from {peer.status[loop_name]}')
                 peer.status[loop_name].remove(received)
         if data['action'] == 'ping':
             if data['state']:
+                # TODO: update state in resend_queue
                 print(data)
 
 
@@ -126,8 +132,9 @@ class PeerClient:
         else:
             import json
             status = peer.get_status()
-            message = {'action': 'ping', 'message': {}, 'state': status}
-            peer.sendto(json.dumps(message).encode(), peer.get_address())
+            message = json.dumps({'action': 'ping', 'message': {}, 'state': status})
+            print(message)
+            peer.sendto(message.encode(), peer.get_address())
 
     @classmethod
     def exit(cls):

@@ -53,8 +53,8 @@ class OSCServer:
 
     @classmethod
     def test_handler(cls, x, y, z):
-        #pass
-        print(f'{x} {y} {z}')
+        pass
+        #print(f'{x} {y} {z}')
     # TTTruck.callback(x, y, z)
 
     @staticmethod

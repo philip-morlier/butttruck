@@ -40,6 +40,7 @@ class WavSlicer:
             WavSlicer.published_loops[name] = file
             with open(file, 'rb') as f:
                 if chunk_number is not None:
+                    print('resending chunk ', chunk_number)
                     f.seek(chunk_number * LIMIT)
                     chunk = f.read(LIMIT)
                     WavSlicer.format_and_send_wav_message(chunk, chunk_number, number_of_chunks, name, peer=peer)

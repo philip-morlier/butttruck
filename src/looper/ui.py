@@ -71,5 +71,5 @@ def _(event):
     TTTruck.loop_load('tq21alez3ne04s1oago7')
 
 app = Application(key_bindings=kb, full_screen=True)
-BuTTTruck.main()
+BuTTTruck.main(config={'peers': '192.168.0.16:1111'})
 app.run()

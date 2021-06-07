@@ -17,7 +17,7 @@ class TestTTTruck(TestCase):
         t.start()
         SLClient.ping()
         time.sleep(0.3)
-        TTTruck.delete_all_loops()
+        TTTruck._delete_all_loops()
 
         self.assertEqual(0, TTTruck.loops)
         self.assertFalse(TTTruck.loop_index)
