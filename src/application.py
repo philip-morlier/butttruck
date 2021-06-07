@@ -25,6 +25,7 @@ class BuTTTruck:
         server_host = '192.168.0.38'
         server_port = 9999
         debug = False
+        peers = None
 
         if config is not None:
             if config.sooperlooper_host is not None:
@@ -35,16 +36,23 @@ class BuTTTruck:
                 server_host = config.server_host
             if config.server_port is not None:
                 server_port = config.server_port
+            if config.peers is not None:
+                peers = config.peers
 
         import subprocess
         BuTTTruck.sooperlooper = subprocess.Popen(['sooperlooper', '-l', '0'])
 
         BuTTTruck.scheduled_tasks.enter(0, 1, periodic, (BuTTTruck.scheduled_tasks, 0.05, process_incoming))
-        BuTTTruck.scheduled_tasks.enter(30, 2, periodic, (BuTTTruck.scheduled_tasks, 30, process_loops))
-        BuTTTruck.scheduled_tasks.enter(60, 2, periodic, (BuTTTruck.scheduled_tasks, 60, resend_missing_chunks))
+        BuTTTruck.scheduled_tasks.enter(10, 2, periodic, (BuTTTruck.scheduled_tasks, 30, process_loops))
+        BuTTTruck.scheduled_tasks.enter(30, 2, periodic, (BuTTTruck.scheduled_tasks, 60, resend_missing_chunks))
 
-        PeerClient.add_peer((server_host, server_port), server=True)
-        PeerClient.add_peer((server_host, server_port), server=False)
+        if peers is not None:
+            peer_list = peers.strip('\'').split(',')
+            for i in peer_list:
+                ip, port = i.split(':')
+                PeerClient.add_peer((ip, int(port)), server=False)
+        else:
+            PeerClient.add_peer((server_host, server_port), server=True)
 
         BuTTTruck.pool.submit(OSCClient.start(host=sl_host, port=sl_port, debug=debug))
         BuTTTruck.pool.submit(BuTTTruck.scheduled_tasks.run)
@@ -104,7 +112,7 @@ def process_incoming():
                     parameters = message['parameters']
                     getattr(TTTruck, func)(loop, parameters)
         except Exception as e:
-            print("OMG ", e)
+            print(f'Unable to receive data {msg} from: {peer.get_address()}')
 
 
 def resend_missing_chunks():
@@ -140,6 +148,9 @@ if __name__ == '__main__':
     parser.add_argument('--server-port',
                         help='URL for public server. Default is 9999'
                         , nargs='?', const=9999)
+    parser.add_argument('--peers',
+                        help='List of peer addresses as \'ip:port,ip:port\', . Default is None'
+                        , nargs='?', const=None)
 
     args = parser.parse_args()
 
