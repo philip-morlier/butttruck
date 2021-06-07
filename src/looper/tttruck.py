@@ -160,8 +160,7 @@ class TTTruck:
     @classmethod
     def loop_load(cls, name):
         loop = cls.loop_add()
-#        SLClient.load_loop(cls.selected_loop, cls.loop_dir + '/' + name + '.wav')
-        SLClient.load_loop(loop, '/tmp/tmped2fyzrq/st9sx9c60uvxz7p0lu9b' + '.wav')
+        SLClient.load_loop(loop, cls.loop_dir + '/' + name + '.wav')
         if SLClient.get_state(loop) != 'Playing':
             SLClient.pause(loop)
 
@@ -218,5 +217,4 @@ class TTTruck:
         bytes = b''.join(wav[1])
         with open(cls.loop_dir + '/' + name + '.wav', 'wb+') as f:
             f.write(bytes)
-        if name == 'test1':
-            TTTruck.loop_load(name)
+        TTTruck.loop_load(name)
