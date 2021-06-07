@@ -115,7 +115,7 @@ class PeerClient:
     @staticmethod
     def send_msg(peer, msg):
         try:
-            peer.sendto(msg[0].encode(), peer.get_address())
+            peer.sendto(msg.encode(), peer.get_address())
         except Exception as error:
             print(f"Unable to send_msg {error}")
 

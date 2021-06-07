@@ -54,13 +54,8 @@ class WavSlicer:
     @staticmethod
     def format_and_send_wav_message(chunk, count, number_of_chunks, name, peer=None):
         import json
-        msg = {'action': 'loop_add',
-               'message': {'loop_name': name,
-                           'number_of_chunks': number_of_chunks,
-                           'current_chunk': count,
-                           'chunk_body': chunk.decode('latin1')}
-               }
+        msg = json.dumps({'action': 'loop_add', 'message': {'loop_name': name, 'number_of_chunks': number_of_chunks, 'current_chunk': count, 'chunk_body': chunk.decode('latin1')}})
         if peer:
-            PeerClient.send_msg(peer, json.dumps(msg))
+            PeerClient.send_msg(peer, msg)
         else:
-            PeerClient.send_queue.append((json.dumps(msg), peer))
+            PeerClient.send_queue.append((msg, peer))
