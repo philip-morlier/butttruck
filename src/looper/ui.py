@@ -1,3 +1,4 @@
+import argparse
 import random
 
 from prompt_toolkit import Application
@@ -71,5 +72,14 @@ def _(event):
     TTTruck.loop_load('tq21alez3ne04s1oago7')
 
 app = Application(key_bindings=kb, full_screen=True)
-BuTTTruck.main(config={'peers': '192.168.0.16:1111'})
+
+config = argparse.Namespace()
+config.peers = '192.168.0.16:1111'
+config.sooperlooper_host = None
+config.sooperlooper_port = None
+config.server_host =None
+config.server_port =None
+
+BuTTTruck.main(config=config)
+
 app.run()

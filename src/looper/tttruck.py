@@ -20,6 +20,11 @@ class TTTruck:
         SLClient.record(loop)
 
     @classmethod
+    def loop_overdub(cls):
+        loop = cls.get_selected_loop()
+        SLClient.overdub(loop)
+
+    @classmethod
     def delete_loop(cls):
         selected = cls.get_selected_loop()
         SLClient.loop_del(selected)

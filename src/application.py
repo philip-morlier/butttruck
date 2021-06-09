@@ -26,16 +26,16 @@ class BuTTTruck:
         peers = None
 
         if config is not None:
-            if config.get('sooperlooper_host', None) is not None:
-                sl_host = config['sooperlooper_host']
-            if config.get('sooperlooper_port', None) is not None:
-                sl_port = config['sooperlooper_host']
-            if config.get('server_host', None) is not None:
-                server_host = config['server_host']
-            if config.get('server_port', None) is not None:
-                server_port = config['server_port']
-            if config.get('peers', None) is not None:
-                peers = config['peers']
+            if config.sooperlooper_host is not None:
+                sl_host = config.sooperlooper_host
+            if config.sooperlooper_port is not None:
+                sl_port = config.sooperlooper_port
+            if config.server_host is not None:
+                server_host = config.server_host
+            if config.server_port is not None:
+                server_port = config.server_port
+            if config.peers is not None:
+                peers = config.peers
 
         import subprocess
         BuTTTruck.sooperlooper = subprocess.Popen(['sooperlooper', '-l', '0'])

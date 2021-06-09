@@ -107,7 +107,6 @@ class PeerClient:
                 # TODO: update state in resend_queue
                 print(data)
 
-
     @classmethod
     def update_peers(cls, data):
         new_peers = pickle.loads(data)
@@ -142,4 +141,3 @@ class PeerClient:
         cls.send_queue = None
         cls.inputs = None
         cls.outputs = None
-
