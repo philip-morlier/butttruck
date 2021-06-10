@@ -60,11 +60,12 @@ class PeerClient:
                         cls.send_msg(peer_resend, msg)
                     else:
                         for peer in write:
-                            if msg is None or peer.is_server():
-                                # TODO: ping should be at a much slower rate
-                                cls.send_ping(peer)
-                            else:
+                            if not peer.server:
                                 cls.send_msg(peer, msg)
+                else:
+                    # TODO: ping should be at a much slower rate
+                    for peer in write:
+                        cls.send_ping(peer)
                 for peer in read:
                     cls.receive_data(peer)
                 time.sleep(0.1)
@@ -132,7 +133,6 @@ class PeerClient:
             import json
             status = peer.get_status()
             message = json.dumps({'action': 'ping', 'message': {}, 'state': status})
-            print(message)
             peer.sendto(message.encode(), peer.get_address())
 
     @classmethod
