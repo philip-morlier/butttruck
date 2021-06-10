@@ -92,21 +92,22 @@ class PeerClient:
             loop_name = message['loop_name']
             received = message['current_chunk']
             total = message['number_of_chunks']
-            print(f'Updating status M: {message}, L: {loop_name}, R: {received}, T: {total}')
+            #print(f'Updating status M: {message}, L: {loop_name}, R: {received}, T: {total}')
             if peer.status.get(loop_name, None) is None:
                 peer.status[loop_name] = [i for i in range(1, total + 1)]
-                print(f'Created new status: {peer.status}')
+                #print(f'Created new status: {peer.status}')
                 peer.status[loop_name].remove(received)
             elif len(peer.status[loop_name]) == 0:
                 peer.status.pop(loop_name)
-                print(f'removing finished status: {loop_name} from: {peer.status}')
+                #print(f'removing finished status: {loop_name} from: {peer.status}')
             else:
-                print(f'removing chunk {received} from {peer.status[loop_name]}')
+                #print(f'removing chunk {received} from {peer.status[loop_name]}')
                 peer.status[loop_name].remove(received)
         if data['action'] == 'ping':
             if data['state']:
                 # TODO: update state in resend_queue
-                print(data)
+                pass
+                #print(data)
 
     @classmethod
     def update_peers(cls, data):
@@ -133,6 +134,7 @@ class PeerClient:
             import json
             status = peer.get_status()
             message = json.dumps({'action': 'ping', 'message': {}, 'state': status})
+            #print('ping', peer.get_address())
             peer.sendto(message.encode(), peer.get_address())
 
     @classmethod

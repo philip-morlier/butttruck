@@ -184,9 +184,9 @@ class TTTruck:
 
     @classmethod
     def _index_contains(cls, name):
-        print(cls.loop_index)
+        #print(cls.loop_index)
         for k, v in cls.loop_index.items():
-            print(k, v)
+            #print(k, v)
             if v == name:
                 return k
         return False
