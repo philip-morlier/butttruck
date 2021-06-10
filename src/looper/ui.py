@@ -73,13 +73,13 @@ def _(event):
 
 app = Application(key_bindings=kb, full_screen=True)
 
-config = argparse.Namespace()
-config.peers = '192.168.0.16:1111'
-config.sooperlooper_host = None
-config.sooperlooper_port = None
-config.server_host =None
-config.server_port =None
+# config = argparse.Namespace()
+# config.peers = '192.168.0.16:1111'
+# config.sooperlooper_host = None
+# config.sooperlooper_port = None
+# config.server_host =None
+# config.server_port =None
 
-BuTTTruck.main(config=config)
-
+#BuTTTruck.main(config=config)
+BuTTTruck.main()
 app.run()

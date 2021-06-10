@@ -62,10 +62,10 @@ class PeerClient:
                         for peer in write:
                             if not peer.server:
                                 cls.send_msg(peer, msg)
-                else:
+
                     # TODO: ping should be at a much slower rate
-                    for peer in write:
-                        cls.send_ping(peer)
+                for peer in write:
+                    cls.send_ping(peer)
                 for peer in read:
                     cls.receive_data(peer)
                 time.sleep(0.1)
