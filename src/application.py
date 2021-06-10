@@ -92,7 +92,7 @@ def process_incoming():
                 if action == 'ping':
                     state = msg['state']
                     resend_queue[peer] = state
-                    print(f'Current state: {state}, resend_queue: {resend_queue[peer]}')
+                    #print(f'Current state: {state}, resend_queue: {resend_queue[peer]}')
                 if action == 'loop_add':
                     message = msg['message']
                     loop_name = message['loop_name']
