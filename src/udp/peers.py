@@ -47,6 +47,7 @@ class PeerClient:
         cls.inputs.append(peer)
         cls.outputs.append(peer)
 
+    count = 100
     @classmethod
     def run(cls):
         while cls.outputs:
@@ -62,19 +63,20 @@ class PeerClient:
                         for peer in write:
                             if not peer.server:
                                 cls.send_msg(peer, msg)
-
-                    # TODO: ping should be at a much slower rate
-                for peer in write:
-                    cls.send_ping(peer)
+                if cls.count >= 100:
+                    cls.count = 0
+                    for peer in write:
+                        cls.send_ping(peer)
+                cls.count += 1
                 for peer in read:
                     cls.receive_data(peer)
-                time.sleep(0.1)
+                time.sleep(0.01)
             except Exception as e:
                 print(e, 'we are in peers dot run')
 
     @classmethod
     def receive_data(cls, peer):
-        data, port = peer.recvfrom(55000)
+        data, port = peer.recvfrom(8192)
         if peer.is_server():
             cls.update_peers(data)
         else:

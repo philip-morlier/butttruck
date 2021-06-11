@@ -29,7 +29,10 @@ class OSCServer:
         osc_method('/pingrecieved', cls.ping_handler)
         osc_method('/global/*', cls.global_parameter_handler)
         osc_method('/global/parameter/selected_loop_num', cls.selected_loop_handler)
+        osc_method('/cycle_len', cls.cycle_len_handler)
         osc_method('/test', cls.test_handler)
+
+        osc_method('/loop_pos', cls.loop_pos_handler)
         osc_method('/state', cls.state_handler)
         #osc_method('/loops', cls.test_handler)
 
@@ -43,18 +46,26 @@ class OSCServer:
 
 
     @classmethod
+    def cycle_len_handler(cls, x, y, z):
+        SLClient.cycle_len = z
+
+    @classmethod
     def selected_loop_handler(cls, x, y, z):
         print('Selection handler ', z)
         SLClient.selected_loop = int(z)
         SLClient.selection_evt.set()
         SLClient.selection_evt.clear()
 
+    @classmethod
+    def loop_pos_handler(cls, x, y, z):
+        #print(x, y, z)
+        SLClient.loop_pos = z
 
 
     @classmethod
     def test_handler(cls, x, y, z):
-        pass
-        #print(f'{x} {y} {z}')
+        #pass
+        print(f'{x} {y} {z}')
     # TTTruck.callback(x, y, z)
 
     @staticmethod

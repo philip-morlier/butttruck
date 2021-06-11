@@ -115,14 +115,17 @@ class TTTruck:
         cls.loop_index[new_loop_number] = name
         cls.select_loop(new_loop_number)
         if new_loop_number == 0:
+            # TODO: hack to make the register_auto_updates work on first loop.
+            time.sleep(0.5)
+            cls.select_loop(0)
+
             SLClient.set_sync_source(-3)
-            SLClient.set_quantize(1, new_loop_number)
+            SLClient.set_quantize(2, new_loop_number)
         else:
             SLClient.set_sync_source(SLClient.sync_source)
             SLClient.set_quantize(SLClient.quantize_on, new_loop_number)
-        SLClient.set_sync(1, new_loop_number)
+        #SLClient.set_sync(1, new_loop_number)
         SLClient.set_playback_sync(1, new_loop_number)
-        SLClient.set_mute_quantized(1, new_loop_number)
         return new_loop_number
 
     @classmethod
@@ -147,6 +150,7 @@ class TTTruck:
     def select_loop(cls, loop_num):
         cls._unregister_loop_updates(SLClient.selected_loop)
         SLClient.set_selected_loop_num(loop_num)
+        SLClient.get_cycle_len(loop_num)
         cls._register_loop_updates(loop_num)
 
     @classmethod
@@ -159,11 +163,24 @@ class TTTruck:
             cls.select_loop(0)
 
     @classmethod
+    def select_prev_loop(cls):
+        selected = cls.get_selected_loop()
+        num_loops = cls.get_number_of_loops()
+        if selected > 0:
+            cls.select_loop(selected - 1)
+        else:
+            cls.select_loop(num_loops)
+
+    @classmethod
+    def solo(cls):
+        SLClient.solo(cls.get_selected_loop())
+
+    @classmethod
     def _register_loop_updates(cls, loop):
-        SLClient.register_auto_update('loop_pos', '/test', loop, interval=100)
-        # SLClient.register_auto_update('cycle_len', '/test', interval=1, loop_number=cls.loops)
+        SLClient.register_auto_update('loop_pos', '/loop_pos', loop, interval=100)
+        #SLClient.register_auto_update('cycle_len', '/test', loop, interval=100)
         # SLClient.register_auto_update('free_time', '/test', interval=1, loop_number=cls.loops)
-        # SLClient.register_auto_update('total_time', '/test', interval=1, loop_number=cls.loops)
+        SLClient.register_auto_update('total_time', '/test', loop)
         # SLClient.register_auto_update('waiting', '/test', interval=1, loop_number=cls.loops)
         SLClient.register_auto_update('state', '/state', loop)
         # SLClient.register_auto_update('next_state', '/test', interval=1, loop_number=cls.loops)
@@ -172,8 +189,8 @@ class TTTruck:
 
     @classmethod
     def _unregister_loop_updates(cls, loop):
-        SLClient.unregister_auto_update('loop_pos', '/test', loop)
-        # SLClient.register_auto_update('cycle_len', '/test', interval=1, loop_number=cls.loops)
+        SLClient.unregister_auto_update('loop_pos', '/loop_pos', loop)
+        #SLClient.unregister_auto_update('cycle_len', '/test', loop)
         # SLClient.register_auto_update('free_time', '/test', interval=1, loop_number=cls.loops)
         # SLClient.register_auto_update('total_time', '/test', interval=1, loop_number=cls.loops)
         # SLClient.register_auto_update('waiting', '/test', interval=1, loop_number=cls.loops)
@@ -230,3 +247,19 @@ class TTTruck:
         with open(cls.loop_dir + '/' + name + '.wav', 'wb+') as f:
             f.write(bytes)
         TTTruck.loop_load(name)
+
+    @classmethod
+    def undo(cls):
+        SLClient.undo(cls.get_selected_loop())
+
+    @classmethod
+    def loop_multiply(cls):
+        SLClient.multiply(cls.get_selected_loop())
+
+    @classmethod
+    def set_quantize(cls):
+        loop = cls.get_selected_loop()
+        if SLClient.quantize_on == 3:
+            SLClient.set_quantize(0, loop)
+        else:
+            SLClient.set_quantize(SLClient.quantize_on + 1, loop)

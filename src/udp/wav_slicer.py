@@ -1,11 +1,9 @@
-import sys
-import os
 import math
-import time
+import os
 
 from src.udp.peers import PeerClient
 
-LIMIT = 5000
+LIMIT = 1024
 
 
 class WavSlicer:
@@ -15,19 +13,15 @@ class WavSlicer:
     def send_changes(changes, name=None, peer=None):
         import json
         if name is None:
-            for k,v in changes.items():
+            for k, v in changes.items():
                 msg = {'action': 'loop_modify', 'message': {k: v}}
                 PeerClient.send_queue.append((json.dumps(msg), peer))
         else:
             msg = {'action': 'loop_modify', 'message': {name: changes}}
             PeerClient.send_queue.append((json.dumps(msg), peer))
 
-
     @staticmethod
     def slice_and_send(name, file=None, chunk_number=None, peer=None):
-        wait_time = 100
-        count = 0
-
         if file is None:
             try:
                 file = WavSlicer.published_loops[name]
@@ -37,6 +31,7 @@ class WavSlicer:
             count = 1
             size_in_bytes = os.path.getsize(file)
             number_of_chunks = math.ceil(size_in_bytes / LIMIT)
+            print(number_of_chunks)
             WavSlicer.published_loops[name] = file
             with open(file, 'rb') as f:
                 if chunk_number is not None:
@@ -55,7 +50,11 @@ class WavSlicer:
     @staticmethod
     def format_and_send_wav_message(chunk, count, number_of_chunks, name, peer=None):
         import json
-        msg = json.dumps({'action': 'loop_add', 'message': {'loop_name': name, 'number_of_chunks': number_of_chunks, 'current_chunk': count, 'chunk_body': chunk.decode('latin1')}})
+        msg = json.dumps({'action': 'loop_add',
+                          'message': {'loop_name': name,
+                                      'number_of_chunks': number_of_chunks,
+                                      'current_chunk': count,
+                                      'chunk_body': chunk.decode('latin1')}})
         if peer:
             PeerClient.send_msg(peer, msg)
         else:

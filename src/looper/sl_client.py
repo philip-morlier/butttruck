@@ -18,8 +18,10 @@ class SLClient:
     selection_evt = threading.Event()
     state_change = threading.Event()
     state = 'Unknown'
-    sync_source = -1
-    quantize_on = 1
+    sync_source = -3
+    quantize_on = 2
+    loop_pos = 0
+    cycle_len = 0
 
     @staticmethod
     def ping():
@@ -349,7 +351,7 @@ class SLClient:
 
     @staticmethod
     def get_cycle_len(loop):
-        SLClient.get_parameter('cycle_len', loop)
+        SLClient.get_parameter('cycle_len', loop, return_path='/cycle_len')
 
     @staticmethod
     def get_free_time(loop):
