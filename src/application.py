@@ -58,6 +58,23 @@ class BuTTTruck:
         BuTTTruck.pool.submit(midi.run)
         OSCServer.start(debug=debug)
 
+        import jack
+        with jack.Client('TTTruck') as jack_client:
+            capture = jack_client.get_ports(is_physical=True, is_output=True)
+            output = jack_client.get_ports(is_physical=True, is_input=True)
+
+            sooperlooper_common_in = jack_client.get_ports(name_pattern='sooperlooper.*common.*in')
+            sooperlooper_common_out = jack_client.get_ports(name_pattern='sooperlooper.*common.*out')
+
+            for src, dest in zip(sooperlooper_common_out, output):
+                print(f'connecting {src} to {dest}')
+                jack_client.connect(src, dest)
+
+            for src, dest in zip(capture, sooperlooper_common_in):
+                print(f'connecting {src} to {dest}')
+                jack_client.connect(src, dest)
+
+
     @classmethod
     def exit(cls):
         if cls.sooperlooper:

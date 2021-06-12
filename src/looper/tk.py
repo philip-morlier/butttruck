@@ -6,9 +6,10 @@ from tkinter.ttk import Progressbar
 from src.application import BuTTTruck
 from src.looper.sl_client import SLClient
 from src.looper.tttruck import TTTruck
+from src.udp.peers import PeerClient
 
 root = Tk()
-root.geometry("625x80")
+root.geometry("625x100")
 root.resizable(0, 0)
 app = Frame(master=root, width=600, height=100, bg='black')
 
@@ -210,6 +211,17 @@ loop_num.grid(column=6, row=0)
 
 mode_led = Label(text='O', bg="red")
 mode_led.grid(column=8, row=0)
+
+
+def connect():
+    ip, port = e.get().split(':')
+    PeerClient.add_peer((ip , int(port)))
+
+e = Entry()
+e.insert(0, "Enter ip:port")
+e.grid(column=0, columnspan=4, row=2, sticky=W)
+c = Button(text='connect', command=connect)
+c.grid(column=2, row=2, sticky=W)
 
 
 def update():
