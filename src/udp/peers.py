@@ -109,6 +109,7 @@ class PeerClient:
         if data['action'] == 'ping':
             if data['state']:
                 # TODO: update state in resend_queue
+                logging.debug(f'Received ping with state: {data}')
                 pass
                 #print(data)
 

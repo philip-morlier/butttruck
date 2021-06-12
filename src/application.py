@@ -135,7 +135,12 @@ def process_incoming():
                 if action == 'loop_modify':
                     message = msg['message']
                     logging.debug(f'Modifying : {loop_name} with {message} from: {peer.get_address()}.')
-                    # TODO: apply {change:value} to loop
+                    #{'action': 'loop_add', 'message': {'loop_name': name, {'param': value},
+                    loop_name = message['loop_name']
+                    for param, value in message.items():
+                        if param == 'loop_name':
+                            continue
+                        TTTruck.set_parameter(loop_name, param, value)
         except Exception as e:
             logging.warning(f'Unable to receive data {msg} from: {peer.get_address()}')
 

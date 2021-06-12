@@ -69,7 +69,6 @@ class OSCServer:
     def parameter_handler(loop, param, value):
         logging.debug(f'Parameter handler: Loop {loop} parameter {param} is {value}')
         name = TTTruck.loop_index[loop]
-        # FIXME
         TTTruck.changes[name][param] = value
         SLClient.parameter_evt.set()
         logging.debug(f'Loop change: {TTTruck.changes}')

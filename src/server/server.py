@@ -24,6 +24,7 @@ class BuTTTruckHandler(socketserver.DatagramRequestHandler):
             print(self.peers)
             self._update_peers(requester, all_peers, requesters_peers)
 
+        # TODO: use json rather than pickle
         response = pickle.dumps(self.peers[requester])
         self.wfile.write(response)
 

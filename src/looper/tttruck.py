@@ -89,8 +89,8 @@ class TTTruck:
         loop = cls.get_selected_loop()
         name = cls._get_selected_loop_name(loop)
         SLClient.reverse(loop)
-        if cls.changes.get(name, None) is None:
-            cls.changes[name] = {'reverse': 1}
+        if cls.changes[name].get('reverse', None) is None:
+            cls.changes[name]['reverse'] = 1
         else:
             if cls.changes[name]['reverse'] == 0:
                 cls.changes[name]['reverse'] = 1
@@ -102,9 +102,9 @@ class TTTruck:
         loop = cls.get_selected_loop()
         name = cls._get_selected_loop_name(loop)
         SLClient.set_rate(rate, loop)
-        if cls.changes.get(name, None) is None:
-            cls.changes[name] = {}
-        cls.changes[name] = {'rate': rate}
+        if cls.changes[name].get('rate', None) is None:
+            cls.changes[name][rate] = rate
+        cls.changes[name]['rate'] = rate
 
     @classmethod
     def loop_add(cls):
@@ -114,12 +114,12 @@ class TTTruck:
         if cls.loop_index.get(new_loop_number, None) is not None:
             logging.warning(f'loop index is broken! loops = {new_loop_number} index = {cls.loop_index}')
         cls.loop_index[new_loop_number] = name
+        cls.changes[name] = {}
         cls.select_loop(new_loop_number)
         if new_loop_number == 0:
             # TODO: hack to make the register_auto_updates work on first loop.
             time.sleep(0.5)
             cls.select_loop(0)
-
             SLClient.set_sync_source(-3)
             SLClient.set_quantize(2, new_loop_number)
         else:
@@ -235,6 +235,13 @@ class TTTruck:
         except KeyError:
             logging.warning(f'{loop_number} is not in the index: {cls.loop_index}')
 
+    @classmethod
+    def _get_loop_number(cls, loop_name):
+        for idx, name in cls.loop_index.items():
+            if name == loop_name:
+                return idx
+        logging.warning(f'{loop_name} is not in the index: {cls.loop_index}')
+
     @staticmethod
     def _generate_name():
         return ''.join(random.choices(string.ascii_lowercase + string.digits, k=20))
@@ -264,3 +271,12 @@ class TTTruck:
             SLClient.set_quantize(0, loop)
         else:
             SLClient.set_quantize(SLClient.quantize_on + 1, loop)
+
+    @classmethod
+    def set_parameter(cls, param, value,  loop_name=None):
+        if loop_name is None:
+            loop_number = cls.get_selected_loop()
+        else:
+            loop_number = cls._get_loop_number(loop_name)
+        logging.debug(f'Setting {param} to {value} for {loop_number} {loop_name} ')
+        SLClient.set_parameter([param, value], loop_number)
