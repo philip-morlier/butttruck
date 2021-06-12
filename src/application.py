@@ -1,5 +1,6 @@
 import time
 import argparse
+import logging
 from sched import scheduler
 
 from src.looper.tttruck import TTTruck
@@ -18,6 +19,9 @@ class BuTTTruck:
 
     @staticmethod
     def main(config=None):
+        logging.basicConfig(filename='log_file.log', encoding='utf-8', level=logging.DEBUG, filemode='w+',
+                            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', force=True)
+
         sl_host = '127.0.0.1'
         sl_port = 9951
         server_host = '192.168.0.38'
@@ -47,16 +51,19 @@ class BuTTTruck:
         if peers is not None:
             peer_list = peers.strip('\'').split(',')
             for i in peer_list:
+                logging.info(f'Adding peer: {i}')
                 ip, port = i.split(':')
                 PeerClient.add_peer((ip, int(port)), server=False)
         else:
+            logging.info(f'Adding server: {server_host}:{server_port}')
             PeerClient.add_peer((server_host, server_port), server=True)
+
 
         BuTTTruck.pool.submit(OSCClient.start(host=sl_host, port=sl_port, debug=debug))
         BuTTTruck.pool.submit(BuTTTruck.scheduled_tasks.run)
         BuTTTruck.pool.submit(PeerClient.run)
         BuTTTruck.pool.submit(midi.run)
-        OSCServer.start(debug=debug)
+        OSCServer.start()
 
         import jack
         with jack.Client('TTTruck') as jack_client:
@@ -67,16 +74,17 @@ class BuTTTruck:
             sooperlooper_common_out = jack_client.get_ports(name_pattern='sooperlooper.*common.*out')
 
             for src, dest in zip(sooperlooper_common_out, output):
-                print(f'connecting {src} to {dest}')
+                logging.debug(f'Connecting {src} to: {dest}')
                 jack_client.connect(src, dest)
 
             for src, dest in zip(capture, sooperlooper_common_in):
-                print(f'connecting {src} to {dest}')
+                logging.debug(f'Connecting {src} to: {dest}')
                 jack_client.connect(src, dest)
 
 
     @classmethod
     def exit(cls):
+        logging.info(f'Shutting down')
         if cls.sooperlooper:
             cls.sooperlooper.kill()
         PeerClient.exit()
@@ -84,11 +92,10 @@ class BuTTTruck:
         for i in BuTTTruck.scheduled_tasks.queue:
             cls.scheduled_tasks.cancel(i)
         cls.pool.shutdown(cancel_futures=True, wait=False)
+        logging.info(f'Goddbye!')
 
 
-global loops
 loops = {}
-global resend_queue
 resend_queue = {}
 
 
@@ -109,29 +116,34 @@ def process_incoming():
                 if action == 'ping':
                     state = msg['state']
                     resend_queue[peer] = state
-                    #print(f'Current state: {state}, resend_queue: {resend_queue[peer]}')
+                    logging.debug(f'Received ping from: {peer.get_address()}. '
+                                  f'Current state: {state} and resend_queue: {resend_queue[peer]}')
                 if action == 'loop_add':
                     message = msg['message']
                     loop_name = message['loop_name']
+                    current_chunk = message['current_chunk']
                     if loops.get(loop_name, None) is not None:
-                        loops[loop_name].pop(message['current_chunk'] - 1)
-                        loops[loop_name].insert(message['current_chunk'] - 1, message['chunk_body'].encode('latin1'))
+                        loops[loop_name].pop(current_chunk - 1)
+                        loops[loop_name].insert(current_chunk - 1, message['chunk_body'].encode('latin1'))
+                        logging.debug(f'Received new loop {loop_name} from: {peer.get_address()}. '
+                                      f'Processing chunk: {current_chunk}')
                     else:
                         loops[message['loop_name']] = [None for i in range(message['number_of_chunks'])]
-                        loops[loop_name].pop(message['current_chunk'] - 1)
-                        loops[loop_name].insert(message['current_chunk'] - 1, message['chunk_body'].encode('latin1'))
+                        loops[loop_name].pop(current_chunk - 1)
+                        loops[loop_name].insert(current_chunk - 1, message['chunk_body'].encode('latin1'))
+                        logging.debug(f'Received chunk: {current_chunk} for {loop_name} from: {peer.get_address()}.')
                 if action == 'loop_modify':
                     message = msg['message']
-                    loop = message['loop_name']
+                    logging.debug(f'Modifying : {loop_name} with {message} from: {peer.get_address()}.')
                     # TODO: apply {change:value} to loop
         except Exception as e:
-            print(f'Unable to receive data {msg} from: {peer.get_address()}')
+            logging.warning(f'Unable to receive data {msg} from: {peer.get_address()}')
 
 
 def resend_missing_chunks():
     for peer, state in resend_queue.items():
         for name, chunks in state.items():
-            print(f'resending {peer}, {name}, {chunks}')
+            logging.debug(f'resending {peer}, {name}, {chunks}')
             for chunk in chunks:
                 WavSlicer.slice_and_send(name, chunk, peer=peer)
 
@@ -140,7 +152,7 @@ def process_loops():
     completed = []
     for k, v in loops.items():
         if not v.__contains__(None):
-            print('success')
+            logging.debug(f'Received complete loop {k}')
             completed.append((k, v))
     while completed:
         c = completed.pop()

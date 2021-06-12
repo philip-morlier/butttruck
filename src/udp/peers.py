@@ -1,4 +1,5 @@
 import json
+import logging
 import pickle
 import select
 import socket
@@ -57,7 +58,7 @@ class PeerClient:
                 if cls.send_queue:
                     msg, peer_resend = cls.send_queue.pop()
                     if peer_resend:
-                        print(f'resending to {peer_resend.get_address()}, {msg}')
+                        logging.debug(f'resending to {peer_resend.get_address()}, {msg}')
                         cls.send_msg(peer_resend, msg)
                     else:
                         for peer in write:
@@ -72,8 +73,8 @@ class PeerClient:
                     cls.receive_data(peer)
                 time.sleep(0.01)
             except Exception as e:
-                print(e, 'we are in peers dot run')
-
+                logging.warning(f'Unable to communicate with peers {e}')
+        logging.info(f'Shutting down peer service')
     @classmethod
     def receive_data(cls, peer):
         data, port = peer.recvfrom(8192)
@@ -84,7 +85,7 @@ class PeerClient:
             try:
                 cls.update_status(data, peer)
             except Exception as e:
-                print('Unable to update status: ', e)
+                logging.warning(f'Unable to update status: {e}')
 
     @classmethod
     def update_status(cls, data, peer):
@@ -94,16 +95,16 @@ class PeerClient:
             loop_name = message['loop_name']
             received = message['current_chunk']
             total = message['number_of_chunks']
-            #print(f'Updating status M: {message}, L: {loop_name}, R: {received}, T: {total}')
+            logging.debug(f'Updating status M: {message}, L: {loop_name}, R: {received}, T: {total}')
             if peer.status.get(loop_name, None) is None:
                 peer.status[loop_name] = [i for i in range(1, total + 1)]
-                #print(f'Created new status: {peer.status}')
+                logging.debug(f'Created new status: {peer.status}')
                 peer.status[loop_name].remove(received)
             elif len(peer.status[loop_name]) == 0:
                 peer.status.pop(loop_name)
-                #print(f'removing finished status: {loop_name} from: {peer.status}')
+                logging.debug(f'removing finished status: {loop_name} from: {peer.status}')
             else:
-                #print(f'removing chunk {received} from {peer.status[loop_name]}')
+                logging.debug(f'removing chunk {received} from {peer.status[loop_name]}')
                 peer.status[loop_name].remove(received)
         if data['action'] == 'ping':
             if data['state']:
@@ -116,17 +117,17 @@ class PeerClient:
         new_peers = pickle.loads(data)
         if new_peers != cls.current_peers:
             diff = {key: new_peers[key] for key in set(new_peers) - set(cls.current_peers)}
-            print('Adding peers: ', diff)
             for k, v in diff.items():
                 cls.add_peer((k, v))
             cls.current_peers = new_peers
+            logging.info(f'Adding peers: {diff}. Current is: {cls.current_peers}')
 
     @staticmethod
     def send_msg(peer, msg):
         try:
             peer.sendto(msg.encode(), peer.get_address())
         except Exception as error:
-            print(f"Unable to send_msg {error}")
+            logging.warning(f"Unable to send_msg {error}")
 
     @staticmethod
     def send_ping(peer):
@@ -136,7 +137,7 @@ class PeerClient:
             import json
             status = peer.get_status()
             message = json.dumps({'action': 'ping', 'message': {}, 'state': status})
-            #print('ping', peer.get_address())
+            logging.debug(f'Pinging {peer.get_address()}. Current state is: {status}')
             peer.sendto(message.encode(), peer.get_address())
 
     @classmethod

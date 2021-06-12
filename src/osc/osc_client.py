@@ -21,13 +21,8 @@ class OSCClient:
             cls.port = port
         if client_name is not None:
             cls.client_name = client_name
-        if debug:
-            logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-            logger = logging.getLogger("osc")
-            logger.setLevel(logging.DEBUG)
-            osc_startup(logger=logger)
-        else:
-            osc_startup()
+        #osc_startup(logger=logging.getLogger(__name__))
+        osc_startup()
         osc_udp_client(cls.host, cls.port, cls.client_name)
         if not cls.running:
             cls.running = True
@@ -38,6 +33,7 @@ class OSCClient:
         while cls.running:
             time.sleep(0.05)
             osc_process()
+        logging.info(f'Shutting down OSC')
         osc_terminate()
 
     @classmethod

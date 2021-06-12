@@ -1,3 +1,4 @@
+import logging
 import math
 import os
 
@@ -26,16 +27,16 @@ class WavSlicer:
             try:
                 file = WavSlicer.published_loops[name]
             except Exception as e:
-                print(f'Unable to send: {name} from file: {file} because {e}')
+                logging.warning(f'Unable to send: {name} from file: {file} because {e}')
         try:
             count = 1
             size_in_bytes = os.path.getsize(file)
             number_of_chunks = math.ceil(size_in_bytes / LIMIT)
-            print(number_of_chunks)
+            logging.debug(f'Splitting {name} into {number_of_chunks} chunks')
             WavSlicer.published_loops[name] = file
             with open(file, 'rb') as f:
                 if chunk_number is not None:
-                    print('resending chunk ', chunk_number)
+                    logging.debug(f'Resending chunk {chunk_number} to {peer.get_address()}')
                     f.seek(chunk_number * LIMIT)
                     chunk = f.read(LIMIT)
                     WavSlicer.format_and_send_wav_message(chunk, chunk_number, number_of_chunks, name, peer=peer)
@@ -45,7 +46,7 @@ class WavSlicer:
                         WavSlicer.format_and_send_wav_message(chunk, count, number_of_chunks, name)
                         count += 1
         except Exception as e:
-            print(e)
+            logging.warning(f'Error slicing and sending {name} to {peer.get_address}: {e}')
 
     @staticmethod
     def format_and_send_wav_message(chunk, count, number_of_chunks, name, peer=None):

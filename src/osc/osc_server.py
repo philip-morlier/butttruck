@@ -11,14 +11,9 @@ class OSCServer:
     return_url = None
 
     @classmethod
-    def start(cls, debug=False, port=9952):
-        if debug:
-            logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-            logger = logging.getLogger("osc")
-            logger.setLevel(logging.DEBUG)
-            osc_startup(logger=logger)
-        else:
-            osc_startup()
+    def start(cls, port=9952):
+        #osc_startup(logger=logging.getLogger(__name__))
+        osc_startup()
         cls.return_url = cls.host + ':' + str(port)
         osc_udp_server(cls.host, port, "osc_server")
         cls._register_handlers()
@@ -51,42 +46,37 @@ class OSCServer:
 
     @classmethod
     def selected_loop_handler(cls, x, y, z):
-        print('Selection handler ', z)
+        logging.debug(f'Selection handler selecting: {z} ')
         SLClient.selected_loop = int(z)
         SLClient.selection_evt.set()
         SLClient.selection_evt.clear()
 
     @classmethod
     def loop_pos_handler(cls, x, y, z):
-        #print(x, y, z)
         SLClient.loop_pos = z
 
 
     @classmethod
     def test_handler(cls, x, y, z):
-        #pass
-        print(f'{x} {y} {z}')
+        logging.debug(f'Test Handler: {x} {y} {z}')
     # TTTruck.callback(x, y, z)
 
     @staticmethod
     def loop_save_handler(x, y, z):
-        print(f'Loop save error {x}  {y}  {z}')
+        logging.warning(f'Loop save error {x}  {y}  {z}')
 
     @staticmethod
     def parameter_handler(loop, param, value):
-        print(f'Loop {loop} parameter {param} is {value}')
+        logging.debug(f'Parameter handler: Loop {loop} parameter {param} is {value}')
         name = TTTruck.loop_index[loop]
+        # FIXME
         TTTruck.changes[name][param] = value
         SLClient.parameter_evt.set()
-        print(TTTruck.changes)
+        logging.debug(f'Loop change: {TTTruck.changes}')
         SLClient.parameter_evt.clear()
 
     @staticmethod
     def state_handler(loop, param, value):
-        print('STATE CHANGE ', loop, param, value)
-        if SLClient.state_change.is_set():
-            print('wwops, wrong state')
-            SLClient.state_change.clear()
         SLClient.state = SLClient.states[int(value)]
         SLClient.state_change.set()
         SLClient.state_change.clear()
@@ -94,7 +84,7 @@ class OSCServer:
 
     @staticmethod
     def global_parameter_handler(loop, param, value):
-        print(f'Global parameter {param} is {value}')
+        logging.debug(f'Global parameter {param} is {value}')
         SLClient.global_evt.set()
         SLClient.global_evt.clear()
 
@@ -106,7 +96,7 @@ class OSCServer:
 
     @staticmethod
     def _loop_save_handler(x, y, z):
-        print(f'Loop load error: {x} {y} {z}')
+        logging.warning(f'Loop load error: {x} {y} {z}')
 
     @classmethod
     def get_return_url(cls):

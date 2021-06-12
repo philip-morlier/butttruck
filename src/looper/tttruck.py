@@ -1,3 +1,4 @@
+import logging
 import random
 import string
 import tempfile
@@ -29,8 +30,8 @@ class TTTruck:
         selected = cls.get_selected_loop()
         SLClient.loop_del(selected)
         if cls.loop_index.get(selected, None) is None:
-            print(
-                f'Unable toselect_n delete loop, index is broken! selected_loop = {selected} index = {cls.loop_index}')
+            logging.warning(
+                f'Unable to delete loop, index is broken! selected_loop = {selected} index = {cls.loop_index}')
         else:
             cls.loop_index.pop(selected)
         loop_number = cls.get_number_of_loops()
@@ -58,13 +59,13 @@ class TTTruck:
         loop = cls.get_selected_loop()
         name = cls.loop_index.get(loop, None)
         if name is None:
-            print(f'{name} is not in {cls.loop_index}')
+            logging.warning(f'Unable to publish changes. Loop {name} doesnt exist')
             return
         changes = cls.changes.get(name, None)
         if changes is None:
-            print(f'No changes for {loop} in {cls.changes}')
+            logging.debug(f'{name} has no changes to publish. {cls.loop_index}')
         else:
-            print(f'Sending changes {changes} for {name}')
+            logging.debug(f'Sending changes {changes} for {name}')
             WavSlicer.send_changes(changes, name=name)
 
     @classmethod
@@ -74,7 +75,7 @@ class TTTruck:
     @classmethod
     def publish_all_changes(cls):
         if cls.changes:
-            print('Sending changes ')
+            logging.debug(f'Publishing all changes: {cls.changes}')
             WavSlicer.send_changes(cls.changes)
 
     @classmethod
@@ -111,7 +112,7 @@ class TTTruck:
         name = TTTruck._generate_name()
         new_loop_number = cls.get_number_of_loops()
         if cls.loop_index.get(new_loop_number, None) is not None:
-            print(f'loop index is broken! loops = {new_loop_number} index = {cls.loop_index}')
+            logging.warning(f'loop index is broken! loops = {new_loop_number} index = {cls.loop_index}')
         cls.loop_index[new_loop_number] = name
         cls.select_loop(new_loop_number)
         if new_loop_number == 0:
@@ -144,7 +145,7 @@ class TTTruck:
         try:
             getattr(TTTruck, y)(z)
         except Exception as e:
-            print(e)
+            logging.warning(f'TTTruck callback failed: {e}')
 
     @classmethod
     def select_loop(cls, loop_num):
@@ -201,9 +202,7 @@ class TTTruck:
 
     @classmethod
     def _index_contains(cls, name):
-        #print(cls.loop_index)
         for k, v in cls.loop_index.items():
-            #print(k, v)
             if v == name:
                 return k
         return False
@@ -234,7 +233,7 @@ class TTTruck:
             name = cls.loop_index[loop_number]
             return name
         except KeyError:
-            print(f'{loop_number} is not in the index: {cls.loop_index}')
+            logging.warning(f'{loop_number} is not in the index: {cls.loop_index}')
 
     @staticmethod
     def _generate_name():
@@ -246,7 +245,9 @@ class TTTruck:
         bytes = b''.join(wav[1])
         with open(cls.loop_dir + '/' + name + '.wav', 'wb+') as f:
             f.write(bytes)
+            logging.debug(f'Wrote file: {f}')
         TTTruck.loop_load(name)
+
 
     @classmethod
     def undo(cls):
