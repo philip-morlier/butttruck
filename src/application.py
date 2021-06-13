@@ -45,8 +45,8 @@ class BuTTTruck:
         BuTTTruck.sooperlooper = subprocess.Popen(['sooperlooper', '-l', '0'])
 
         BuTTTruck.scheduled_tasks.enter(0, 1, periodic, (BuTTTruck.scheduled_tasks, 0.05, process_incoming))
-        BuTTTruck.scheduled_tasks.enter(10, 2, periodic, (BuTTTruck.scheduled_tasks, 30, process_loops))
-        BuTTTruck.scheduled_tasks.enter(30, 2, periodic, (BuTTTruck.scheduled_tasks, 60, resend_missing_chunks))
+        BuTTTruck.scheduled_tasks.enter(10, 2, periodic, (BuTTTruck.scheduled_tasks, 10, process_loops))
+        BuTTTruck.scheduled_tasks.enter(30, 2, periodic, (BuTTTruck.scheduled_tasks, 15, resend_missing_chunks))
 
         if peers is not None:
             peer_list = peers.strip('\'').split(',')
