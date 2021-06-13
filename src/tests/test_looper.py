@@ -12,7 +12,7 @@ class LooperTest(unittest.TestCase):
         self.ping = x
 
     def test_ping(self):
-        OSCServer.start(debug=True, port=8852)
+        OSCServer.start(port=8852)
         OSCClient.start(port=8852, client_name='test')
         OSCServer.register_handler('/test', self.handler)
         OSCClient.send_message('/test', type=',s', args=['hello'])

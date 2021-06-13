@@ -75,6 +75,7 @@ class PeerClient:
             except Exception as e:
                 logging.warning(f'Unable to communicate with peers {e}')
         logging.info(f'Shutting down peer service')
+
     @classmethod
     def receive_data(cls, peer):
         data, port = peer.recvfrom(8192)

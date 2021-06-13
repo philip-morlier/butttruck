@@ -226,6 +226,7 @@ class TTTruck:
         while num_loops >= 0:
             SLClient.set_selected_loop_num(0)
             cls.delete_loop()
+            num_loops -= 1
 
     @classmethod
     def _get_selected_loop_name(cls, loop_number):
