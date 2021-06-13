@@ -280,3 +280,7 @@ class TTTruck:
             loop_number = cls._get_loop_number(loop_name)
         logging.debug(f'Setting {param} to {value} for {loop_number} {loop_name} ')
         SLClient.set_parameter([param, value], loop_number)
+
+    @classmethod
+    def redo(cls):
+        SLClient.redo(cls.get_selected_loop())
