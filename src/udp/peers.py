@@ -58,7 +58,7 @@ class PeerClient:
                 if cls.send_queue:
                     msg, peer_resend = cls.send_queue.pop()
                     if peer_resend:
-                        logging.debug(f'resending to {peer_resend.get_address()}, {msg}')
+                        logging.debug(f'resending to {peer_resend.get_address()}')
                         cls.send_msg(peer_resend, msg)
                     else:
                         for peer in write:
@@ -96,7 +96,7 @@ class PeerClient:
             loop_name = message['loop_name']
             received = message['current_chunk']
             total = message['number_of_chunks']
-            logging.debug(f'Updating status M: {message}, L: {loop_name}, R: {received}, T: {total}')
+            logging.debug(f'Updating status L: {loop_name}, R: {received}, T: {total}')
             if peer.status.get(loop_name, None) is None:
                 peer.status[loop_name] = [i for i in range(1, total + 1)]
                 logging.debug(f'Created new status: {peer.status}')

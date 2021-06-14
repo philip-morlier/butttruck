@@ -45,8 +45,8 @@ class BuTTTruck:
         BuTTTruck.sooperlooper = subprocess.Popen(['sooperlooper', '-l', '0'])
 
         BuTTTruck.scheduled_tasks.enter(0, 1, periodic, (BuTTTruck.scheduled_tasks, 0.05, process_incoming))
-        BuTTTruck.scheduled_tasks.enter(10, 2, periodic, (BuTTTruck.scheduled_tasks, 10, process_loops))
-        BuTTTruck.scheduled_tasks.enter(30, 2, periodic, (BuTTTruck.scheduled_tasks, 15, resend_missing_chunks))
+        BuTTTruck.scheduled_tasks.enter(10, 2, periodic, (BuTTTruck.scheduled_tasks, 2, process_loops))
+        BuTTTruck.scheduled_tasks.enter(30, 2, periodic, (BuTTTruck.scheduled_tasks, 1, resend_missing_chunks))
 
         if peers is not None:
             peer_list = peers.strip('\'').split(',')
@@ -134,7 +134,7 @@ def process_incoming():
                         logging.debug(f'Received chunk: {current_chunk} for {loop_name} from: {peer.get_address()}.')
                 if action == 'loop_modify':
                     message = msg['message']
-                    logging.debug(f'Modifying : {loop_name} with {message} from: {peer.get_address()}.')
+                    logging.debug(f'Modifying : {message} from: {peer.get_address()}.')
                     #{'action': 'loop_add', 'message': {'loop_name': name, {'param': value},
                     loop_name = message['loop_name']
                     for param, value in message.items():
@@ -150,7 +150,8 @@ def resend_missing_chunks():
         for name, chunks in state.items():
             logging.debug(f'resending {peer}, {name}, {chunks}')
             for chunk in chunks:
-                WavSlicer.slice_and_send(name, chunk, peer=peer)
+                WavSlicer.slice_and_send(name, chunk_number=chunk, peer=peer)
+                time.sleep(0.01)
 
 
 def process_loops():

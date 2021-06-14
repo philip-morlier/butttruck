@@ -28,6 +28,9 @@ class WavSlicer:
                 file = WavSlicer.published_loops[name]
             except Exception as e:
                 logging.warning(f'Unable to send: {name} from file: {file} because {e}')
+                # TODO: inform peer we no longer have file
+                return
+
         try:
             count = 1
             size_in_bytes = os.path.getsize(file)
@@ -56,7 +59,7 @@ class WavSlicer:
                                       'current_chunk': count,
                                       'chunk_body': chunk.decode('latin1')}})
         if peer:
-            logging.debug(f'Resend {msg} to {peer.get_address()}')
+            logging.debug(f'Resend {name}:{chunk}to {peer.get_address()}')
             PeerClient.send_msg(peer, msg)
         else:
             PeerClient.send_queue.append((msg, peer))
