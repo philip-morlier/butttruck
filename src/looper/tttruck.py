@@ -52,7 +52,7 @@ class TTTruck:
         file = cls.loop_dir + '/' + name
         SLClient.save_loop(file, loop_number=loop)
         time.sleep(2)
-        WavSlicer.slice_and_send(name, file)
+        WavSlicer.slice_and_send(name, file=file)
 
     @classmethod
     def publish_selected_changes(cls):

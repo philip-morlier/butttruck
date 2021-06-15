@@ -58,8 +58,8 @@ class WavSlicer:
                                       'number_of_chunks': number_of_chunks,
                                       'current_chunk': count,
                                       'chunk_body': chunk.decode('latin1')}})
-        if peer:
-            logging.debug(f'Resend {name}:{chunk}to {peer.get_address()}')
+        if peer is not None:
+            logging.debug(f'Resend {name}:{count}to {peer.get_address()}')
             PeerClient.send_msg(peer, msg)
         else:
             PeerClient.send_queue.append((msg, peer))
