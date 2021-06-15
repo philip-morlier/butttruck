@@ -1,9 +1,8 @@
 import json
-import socket
 from unittest import TestCase
 
-from src.application import process_incoming, resend_missing_chunks
-from src.udp.peers import Peer, PeerClient
+from src.application import process_incoming
+from src.udp.peers import PeerClient
 
 
 class TestPeerClient(TestCase):
@@ -13,16 +12,17 @@ class TestPeerClient(TestCase):
         peer = PeerClient.inputs[0]
         peer2 = PeerClient.inputs[1]
 
-        self.assertEqual({}, peer2.status)
+        self.assertEqual({}, peer2.receiving_status)
         msg = json.dumps({"action": "loop_add",
                           "message": {"loop_name": "loop2", "number_of_chunks": 3,
                                       "current_chunk": 2,
                                       "chunk_body": b'x00'.decode('latin1')}})
         peer.sendto(msg.encode(), peer2.address)
         PeerClient.receive_data(peer2)
+#        process_incoming()
 
-        self.assertEqual({'loop2': [1, 3]}, peer2.status)
-        peer2.sendto(json.dumps({"action": "ping", "state": peer2.status}).encode(), peer.address)
+        self.assertEqual({'loop2': [1, 3]}, peer2.get_receiving_status())
+        peer2.sendto(json.dumps({"action": "ping", "state": peer2.get_receiving_status()}).encode(), peer.address)
         PeerClient.receive_data(peer)
         process_incoming()
 
@@ -32,7 +32,7 @@ class TestPeerClient(TestCase):
                                       "chunk_body": b'x00'.decode('latin1')}})
         peer.sendto(msg.encode(), peer2.address)
         PeerClient.receive_data(peer2)
-        self.assertEqual({'loop2': [3]}, peer2.status)
+        self.assertEqual({'loop2': [3]}, peer2.get_receiving_status())
 
         msg = json.dumps({"action": "loop_add",
                           "message": {"loop_name": "loop2", "number_of_chunks": 3,
@@ -41,7 +41,7 @@ class TestPeerClient(TestCase):
         peer.sendto(msg.encode(), peer2.address)
 
         PeerClient.receive_data(peer2)
-        self.assertEqual({}, peer.status)
+        self.assertEqual({}, peer2.get_receiving_status())
 
         peer.close()
         peer2.close()

@@ -44,9 +44,10 @@ class BuTTTruck:
         import subprocess
         BuTTTruck.sooperlooper = subprocess.Popen(['sooperlooper', '-l', '0'])
 
+        # TODO: scheduled tasks won't reschedule if they take longer than the reschedule period
         BuTTTruck.scheduled_tasks.enter(0, 1, periodic, (BuTTTruck.scheduled_tasks, 0.05, process_incoming))
-        BuTTTruck.scheduled_tasks.enter(10, 2, periodic, (BuTTTruck.scheduled_tasks, 2, process_loops))
-        BuTTTruck.scheduled_tasks.enter(30, 2, periodic, (BuTTTruck.scheduled_tasks, 1, resend_missing_chunks))
+        BuTTTruck.scheduled_tasks.enter(10, 2, periodic, (BuTTTruck.scheduled_tasks, 5, process_loops))
+        BuTTTruck.scheduled_tasks.enter(1, 2, periodic, (BuTTTruck.scheduled_tasks, 10, resend_missing_chunks))
 
         if peers is not None:
             peer_list = peers.strip('\'').split(',')
@@ -57,7 +58,6 @@ class BuTTTruck:
         else:
             logging.info(f'Adding server: {server_host}:{server_port}')
             PeerClient.add_peer((server_host, server_port), server=True)
-
 
         BuTTTruck.pool.submit(OSCClient.start(host=sl_host, port=sl_port, debug=debug))
         BuTTTruck.pool.submit(BuTTTruck.scheduled_tasks.run)
@@ -81,7 +81,6 @@ class BuTTTruck:
                 logging.debug(f'Connecting {src} to: {dest}')
                 jack_client.connect(src, dest)
 
-
     @classmethod
     def exit(cls):
         logging.info(f'Shutting down')
@@ -96,7 +95,7 @@ class BuTTTruck:
 
 
 loops = {}
-resend_queue = {}
+#resend_queue = {}
 
 
 def periodic(scheduler, interval, action, actionargs=()):
@@ -115,27 +114,27 @@ def process_incoming():
                 action = msg['action']
                 if action == 'ping':
                     state = msg['state']
-                    resend_queue[peer] = state
-                    logging.debug(f'Received ping from: {peer.get_address()}. '
-                                  f'Current state: {state} and resend_queue: {resend_queue[peer]}')
+                    peer.sending_status = state
+                    #resend_queue[peer] = state
+                    logging.debug(f'Received ping from: {peer.get_address()}. Current state: {state}')
                 if action == 'loop_add':
                     message = msg['message']
                     loop_name = message['loop_name']
                     current_chunk = message['current_chunk']
-                    if loops.get(loop_name, None) is not None:
-                        loops[loop_name].pop(current_chunk - 1)
-                        loops[loop_name].insert(current_chunk - 1, message['chunk_body'].encode('latin1'))
-                        logging.debug(f'Received new loop {loop_name} from: {peer.get_address()}. '
-                                      f'Processing chunk: {current_chunk}')
-                    else:
+                    if loops.get(loop_name, None) is None:
                         loops[message['loop_name']] = [None for i in range(message['number_of_chunks'])]
                         loops[loop_name].pop(current_chunk - 1)
                         loops[loop_name].insert(current_chunk - 1, message['chunk_body'].encode('latin1'))
                         logging.debug(f'Received chunk: {current_chunk} for {loop_name} from: {peer.get_address()}.')
+                    else:
+                        loops[loop_name].pop(current_chunk - 1)
+                        loops[loop_name].insert(current_chunk - 1, message['chunk_body'].encode('latin1'))
+                        logging.debug(f'Received chunk {current_chunk} from: {peer.get_address()}. ')
+
                 if action == 'loop_modify':
                     message = msg['message']
                     logging.debug(f'Modifying : {message} from: {peer.get_address()}.')
-                    #{'action': 'loop_add', 'message': {'loop_name': name, {'param': value},
+                    # {'action': 'loop_add', 'message': {'loop_name': name, {'param': value},
                     loop_name = message['loop_name']
                     for param, value in message.items():
                         if param == 'loop_name':
@@ -146,12 +145,20 @@ def process_incoming():
 
 
 def resend_missing_chunks():
-    for peer, state in resend_queue.items():
-        for name, chunks in state.items():
-            logging.debug(f'resending {peer}, {name}, {chunks}')
-            for chunk in chunks:
-                WavSlicer.slice_and_send(name, chunk_number=chunk, peer=peer)
-                time.sleep(0.01)
+    for peer in PeerClient.outputs:
+        status = peer.get_sending_status()
+        if status:
+            for name, chunks in status.items():
+                for chunk in chunks:
+                    logging.debug(f'resending {peer}, {name}, {chunks}')
+                    WavSlicer.slice_and_send(name, chunk_number=chunk, peer=peer)
+
+    # for peer, state in resend_queue.items():
+    #     for name, chunks in state.items():
+    #         logging.debug(f'resending {peer}, {name}, {chunks}')
+    #         for chunk in chunks:
+    #             WavSlicer.slice_and_send(name, chunk_number=chunk, peer=peer)
+    #             time.sleep(0.01)
 
 
 def process_loops():
@@ -162,8 +169,8 @@ def process_loops():
             completed.append((k, v))
     while completed:
         c = completed.pop()
-        TTTruck._write_wav(c)
         loops.pop(c[0])
+        TTTruck._write_wav(c)
 
 
 if __name__ == '__main__':
