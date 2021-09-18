@@ -15,7 +15,7 @@ class TestTTTruck(TestCase):
         OSCServer.start(port=9952)
         t = threading.Thread(target=OSCClient.start(client_name='test'), daemon=True)
         t.start()
-        #SLClient.ping()
+        SLClient.ping()
         #time.sleep(0.3)
         TTTruck._delete_all_loops()
 

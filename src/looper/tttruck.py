@@ -27,7 +27,10 @@ class TTTruck:
 
     @classmethod
     def delete_loop(cls):
+        if cls.get_number_of_loops() == 0:
+            return
         selected = cls.get_selected_loop()
+
         SLClient.loop_del(selected)
         if cls.loop_index.get(selected, None) is None:
             logging.warning(
@@ -111,8 +114,6 @@ class TTTruck:
         SLClient.loop_add()
         name = TTTruck._generate_name()
         new_loop_number = cls.get_number_of_loops()
-        if cls.loop_index.get(new_loop_number, None) is not None:
-            logging.warning(f'loop index is broken! loops = {new_loop_number} index = {cls.loop_index}')
         cls.loop_index[new_loop_number] = name
         cls.changes[name] = {}
         cls.select_loop(new_loop_number)

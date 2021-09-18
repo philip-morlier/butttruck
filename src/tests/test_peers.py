@@ -6,6 +6,11 @@ from src.udp.peers import PeerClient
 
 
 class TestPeerClient(TestCase):
+    #complete this test, two names two loops, status should show two users and two items. Will
+    #always fail, needs code changes.
+    def test_update_multiple_loop_statuses(self):
+        self.fail("wRite me philllip")
+
     def test_update_status(self):
         PeerClient.add_peer(('0.0.0.0', 1111))
         PeerClient.add_peer(('0.0.0.0', 2222))
