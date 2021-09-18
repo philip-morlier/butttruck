@@ -102,6 +102,7 @@ class PeerClient:
             received = message['current_chunk']
             total = message['number_of_chunks']
             logging.debug(f'Updating status L: {loop_name}, R: {received}, T: {total}')
+<<<<<<< HEAD
             if peer.get_receiving_status().get(loop_name, None) is None:
                 peer.get_receiving_status()[loop_name] = [i for i in range(1, total + 1)]
                 logging.debug(f'Created new status: {peer.receiving_status}')
@@ -112,6 +113,18 @@ class PeerClient:
             if len(peer.get_receiving_status()[loop_name]) == 0:
                 peer.get_receiving_status().pop(loop_name)
                 logging.debug(f'removing finished status: {loop_name} from: {peer.get_receiving_status()}')
+=======
+            if peer.get_receiving_status().get(loop_name, None) is not None:
+                logging.debug(f'removing chunk {received} from {peer.get_receiving_status()[loop_name]}')
+                peer.get_receiving_status()[loop_name].remove(received)
+                if len(peer.get_receiving_status()[loop_name]) == 0:
+                    peer.get_receiving_status().pop(loop_name)
+                    logging.debug(f'removing finished status: {loop_name} from: {peer.get_receiving_status()}')
+            else:
+                peer.get_receiving_status()[loop_name] = [i for i in range(1, total + 1)]
+                logging.debug(f'Created new status: {peer.receiving_status}')
+                peer.get_receiving_status()[loop_name].remove(received)
+>>>>>>> 02652f51aed708887baad36ff3dfe27255bd3232
         if data['action'] == 'ping':
             if data['state']:
                 # TODO: update state in resend_queue
@@ -143,6 +156,7 @@ class PeerClient:
             peer.sendto(b'', peer.get_address())
         else:
             import json
+<<<<<<< HEAD
             # TODO long loop statuses can exceed the packet limit size and must be split into multiple messages or truncated
             status = peer.get_receiving_status()
             print(status)
@@ -155,6 +169,23 @@ class PeerClient:
                     message = json.dumps({'action': 'ping', 'message': {}, 'state': {k:v[i*100:i*100+100]}})
                     logging.debug(f'Pinging {peer.get_address()}. Current state is: {status}')
                     peer.sendto(message.encode(), peer.get_address())
+=======
+            status = peer.get_receiving_status()
+            if status:
+                for k, v in status.items():
+                    count = math.ceil(len(v) / 100)
+                    if len(v) == 0:
+                        print('Status done')
+                        peer.receiving_status.pop(k)
+                    for i in range(count):
+                        message = json.dumps({'action': 'ping', 'message': {}, 'state': {k:v[i*100:i*100+100]}})
+                        logging.debug(f'Pinging {peer.get_address()}. Current state is: {status}')
+                        peer.sendto(message.encode(), peer.get_address())
+            else:
+                message = json.dumps({'action': 'ping', 'message': {}, 'state': {}})
+                logging.debug(f'Pinging {peer.get_address()}. Current state is: {status}')
+                peer.sendto(message.encode(), peer.get_address())
+>>>>>>> 02652f51aed708887baad36ff3dfe27255bd3232
             #message = json.dumps({'action': 'ping', 'message': {}, 'state': status})
             #logging.debug(f'Pinging {peer.get_address()}. Current state is: {status}')
             #peer.sendto(message.encode(), peer.get_address())
