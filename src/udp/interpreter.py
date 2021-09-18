@@ -1,47 +1,27 @@
-
 class DataInterpreter:
 
-    # def __init__(self, data):
-    #     self.data = data
-
-
-
-    # def interpret(self):
-    #     data = self.data
-    #     tag = data[0:3]
-    #     if tag == 100:
-    #         pass
-    #     if tag == 200:
-    #         if len(data) == 62:
-    #             self.frame()
-    #         else:
-    #             pass
-    #     if tag == 300:
-    #         pass
-    #     if tag == 400:
-    #         pass
     @staticmethod
     def frame(data):
-        size = data[6:13]
-        _size = int.from_bytes(size, 'little')
-        count = data[13:18]
-        _count = int.from_bytes(count, 'little')
+        size_in_bytes = int.from_bytes(data[6:13], 'little')
+        number_of_chunks = int.from_bytes(data[13:18], 'little')
         header = data[18:62]
-        _frame = {}
-        for i in range(_count):
-            _frame[i] = None
+        dict_of_chunks = {}
+        for i in range(number_of_chunks):
+            dict_of_chunks[i] = None
         global wav_frame
-        wav_frame = [_size, _count, header, _frame]
+        wav_frame = [size_in_bytes, number_of_chunks, header, dict_of_chunks]
         return wav_frame
 
     @staticmethod
-    def match(_dict, _list):
-        for x in _dict:
-            for i in _list:
+    def match_empty_keys_to_chunks(dict_of_chunks, list_of_chunks):
+        for x in dict_of_chunks:
+            for i in list_of_chunks:
                 if x == int.from_bytes(i[3:6], 'little'):
-                    _dict[x] = i[6: len(i)]
+                    dict_of_chunks[x] = i[6: len(i)]
+        return dict_of_chunks
 
+    @staticmethod
+    def insert_chunk(dict_of_chunks ,chunk):
+        index = int.from_bytes(chunk[3:6], 'little')
+        dict_of_chunks[index] = chunk[6:len(chunk)]
 
-    def test_pass(self):
-        test = self.frame
-        print(test)

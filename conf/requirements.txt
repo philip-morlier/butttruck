@@ -8,3 +8,9 @@ requests==2.18.4
 
 # UI
 prompt-toolkit==3.0.16
+
+pytest==6.2.3
+
+mido==1.2.9
+
+JACK-Client==0.5.3

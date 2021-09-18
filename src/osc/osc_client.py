@@ -1,47 +1,40 @@
 import logging
 import time
-from threading import Thread
 
 from osc4py3 import oscbuildparse
 from osc4py3.as_eventloop import osc_udp_client, osc_process, osc_send, osc_terminate, osc_startup
 
 
 class OSCClient:
-    host = None
-    port = None
-    client_name = None
+    host = '127.0.0.1'
+    port = 9951
+    client_name = 'butttruck'
     running = False
-    restart = True
 
     # osc4py3 as_allthreads is expensive but may work better than this
     @classmethod
-    def start(cls, host='127.0.0.1', port=9951, client_name='butttruck', debug=False):
-        if cls.host is None:
+    def start(cls, host=None, port=None, client_name=None, debug=False):
+        cls.debug = debug
+        if host is not None:
             cls.host = host
-        if cls.port is None:
+        if port is not None:
             cls.port = port
-        if cls.client_name is None:
+        if client_name is not None:
             cls.client_name = client_name
-        if debug:
-            logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-            logger = logging.getLogger("osc")
-            logger.setLevel(logging.DEBUG)
-            osc_startup(logger=logger)
-        else:
-            osc_startup()
+        #osc_startup(logger=logging.getLogger(__name__))
+        osc_startup()
         osc_udp_client(cls.host, cls.port, cls.client_name)
-        thread = Thread(target=cls._run, daemon=True)
-        cls.running = True
-        thread.start()
+        if not cls.running:
+            cls.running = True
+            return cls._run
 
     @classmethod
     def _run(cls):
         while cls.running:
             time.sleep(0.05)
             osc_process()
+        logging.info(f'Shutting down OSC')
         osc_terminate()
-        if cls.restart:
-            cls.start()
 
     @classmethod
     def send_message(cls, message, args=None, type=None):
@@ -49,12 +42,8 @@ class OSCClient:
             cls.start()
         msg = oscbuildparse.OSCMessage(message, type, args)
         osc_send(msg, cls.client_name)
+        osc_process()
 
     @classmethod
-    def stop(cls):
-        cls.running = False
-        cls.restart = False
-
-    @classmethod
-    def restart(cls):
+    def exit(cls):
         cls.running = False
