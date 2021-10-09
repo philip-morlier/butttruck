@@ -10,7 +10,7 @@ from src.osc.osc_server import OSCServer
 
 
 class TestTTTruck(TestCase):
-
+#TODO make test not depend on super looper
     def test_loop_index(self):
         OSCServer.start(port=9952)
         t = threading.Thread(target=OSCClient.start(client_name='test'), daemon=True)

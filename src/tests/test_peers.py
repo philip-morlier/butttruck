@@ -9,6 +9,7 @@ class TestPeerClient(TestCase):
     #complete this test, two names two loops, status should show two users and two items. Will
     #always fail, needs code changes.
     def test_update_multiple_loop_statuses(self):
+        # write this test
         self.fail("wRite me philllip")
 
     def test_update_status(self):
