@@ -5,6 +5,7 @@ import tempfile
 import time
 
 from src.looper.sl_client import SLClient
+from src.udp.peers import PeerClient
 from src.udp.wav_slicer import WavSlicer
 
 
@@ -50,12 +51,18 @@ class TTTruck:
 
     @classmethod
     def publish_loop(cls):
-        loop = cls.get_selected_loop()
-        name = cls._get_selected_loop_name(loop)
+        loop_number = cls.get_selected_loop()
+        name = cls._get_selected_loop_name(loop_number)
         file = cls.loop_dir + '/' + name
-        SLClient.save_loop(file, loop_number=loop)
+        SLClient.save_loop(file, loop_number=loop_number)
+        global_time = PeerClient.global_time
+
+        cycle_length = SLClient.cycle_len
+        loop_position = SLClient.loop_pos
+        print('Publishing loop of length and pos: ', cycle_length, loop_position)
+        next_cycle_length_time = ((cycle_length  - loop_position) + global_time)
         time.sleep(2)
-        WavSlicer.slice_and_send(name, file=file)
+        WavSlicer.slice_and_send(name, file=file, next_cycle_time=next_cycle_length_time)
 
     @classmethod
     def publish_selected_changes(cls):

@@ -42,6 +42,7 @@ class OSCServer:
 
     @classmethod
     def cycle_len_handler(cls, x, y, z):
+        print(x, y, z)
         SLClient.cycle_len = z
 
     @classmethod
