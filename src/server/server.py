@@ -1,6 +1,7 @@
 import socketserver
 import random
 import pickle
+import time
 
 
 class BuTTTruckHandler(socketserver.DatagramRequestHandler):
@@ -25,8 +26,9 @@ class BuTTTruckHandler(socketserver.DatagramRequestHandler):
             self._update_peers(requester, all_peers, requesters_peers)
 
         # TODO: use json rather than pickle
-        response = pickle.dumps(self.peers[requester])
+        response = pickle.dumps([time.monotonic_ns(), self.peers[requester]])
         self.wfile.write(response)
+
 
     # TODO: this assumes that current_peers is always < all_peers.
     # We need to handle de-registration of peers at some point probably
