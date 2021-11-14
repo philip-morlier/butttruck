@@ -22,6 +22,15 @@ class Peer(socket.socket):
     def is_server(self):
         return self.server
 
+    def set_receiving_status(self, loop, status):
+        self.receiving_status[loop] = status
+
+    def update_receiving_status(self, loop, chunk):
+        self.receiving_status[loop].remove(chunk)
+
+    def clear_receiving_status(self, loop):
+        self.receiving_status.pop(loop)
+
     def get_receiving_status(self):
         return self.receiving_status
 
@@ -48,7 +57,7 @@ class PeerClient:
 
         # makes local testing easier
         if not server:
-            peer.bind(('0.0.0.0', addr[1]))
+           peer.bind(('0.0.0.0', addr[1]))
 
         cls.inputs.append(peer)
         cls.outputs.append(peer)
@@ -84,8 +93,11 @@ class PeerClient:
     @classmethod
     def receive_data(cls, peer):
         data, port = peer.recvfrom(8192)
+        data = pickle.loads(data)
+        print(data)
         if peer.is_server():
-            cls.update_peers(data)
+            cls.update_peers(data[1])
+            cls.update_time(data[0])
         else:
             cls.receive_queue.append((data, peer))
             try:
@@ -105,14 +117,14 @@ class PeerClient:
 
             if peer.get_receiving_status().get(loop_name, None) is not None:
                 logging.debug(f'removing chunk {received} from {peer.get_receiving_status()[loop_name]}')
-                peer.get_receiving_status()[loop_name].remove(received)
+                peer.update_receiving_status(loop_name, received)
                 if len(peer.get_receiving_status()[loop_name]) == 0:
-                    peer.get_receiving_status().pop(loop_name)
+                    peer.clear_receiving_status(loop_name)
                     logging.debug(f'removing finished status: {loop_name} from: {peer.get_receiving_status()}')
             else:
-                peer.get_receiving_status()[loop_name] = [i for i in range(1, total + 1)]
+                peer.set_receiving_status(loop_name, [i for i in range(1, total + 1)])
                 logging.debug(f'Created new status: {peer.receiving_status}')
-                peer.get_receiving_status()[loop_name].remove(received)
+                peer.update_receiving_status(loop_name, received)
         if data['action'] == 'ping':
             if data['state']:
                 # TODO: update state in resend_queue
@@ -130,6 +142,11 @@ class PeerClient:
                 cls.add_peer((k, v))
             cls.current_peers = new_peers
             logging.info(f'Adding peers: {diff}. Current is: {cls.current_peers}')
+
+    @classmethod
+    def update_time(cls, data):
+        cls.server_time = data
+        logging.info(f'Server time is: {data}')
 
     @staticmethod
     def send_msg(peer, msg):

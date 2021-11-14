@@ -118,7 +118,7 @@ class TTTruck:
         cls.changes[name] = {}
         cls.select_loop(new_loop_number)
         if new_loop_number == 0:
-            # TODO: hack to make the register_auto_updates work on first loop.
+            # FIXME: hack to make the register_auto_updates work on first loop.
             time.sleep(0.5)
             cls.select_loop(0)
             SLClient.set_sync_source(-3)
@@ -138,6 +138,10 @@ class TTTruck:
         else:
             loop = cls.loop_add()
         SLClient.load_loop(loop, cls.loop_dir + '/' + name + '.wav')
+        # TODO: get future time from peer and schedule event
+        # time_difference = local_now - remote_start
+        # >>> multiple = local_now + remote_start ;
+        # >>> multiple -= (multiple % 2);
         if SLClient.get_state(loop) != 'Playing':
             SLClient.pause(loop)
 
