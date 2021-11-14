@@ -19,8 +19,8 @@ class BuTTTruck:
 
     @staticmethod
     def main(config=None):
-        logging.basicConfig(filename='log_file.log', encoding='utf-8', level=logging.DEBUG, filemode='w+',
-                            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', force=True)
+        # logging.basicConfig(filename='log_file.log', encoding='utf-8', level=logging.DEBUG, filemode='w+',
+        #                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', force=True)
 
         sl_host = '127.0.0.1'
         sl_port = 9951

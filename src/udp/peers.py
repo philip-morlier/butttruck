@@ -5,6 +5,7 @@ import pickle
 import select
 import socket
 import time
+import json
 from collections import deque
 
 
@@ -56,8 +57,8 @@ class PeerClient:
         peer.setblocking(False)
 
         # makes local testing easier
-        if not server:
-           peer.bind(('0.0.0.0', addr[1]))
+        # if not server:
+        #    peer.bind(('0.0.0.0', addr[1]))
 
         cls.inputs.append(peer)
         cls.outputs.append(peer)
@@ -93,7 +94,7 @@ class PeerClient:
     @classmethod
     def receive_data(cls, peer):
         data, port = peer.recvfrom(8192)
-        data = pickle.loads(data)
+        data = json.loads(data)
         print(data)
         if peer.is_server():
             cls.update_peers(data[1])
@@ -107,35 +108,36 @@ class PeerClient:
 
     @classmethod
     def update_status(cls, data, peer):
-        data = json.loads(data)
-        if data['action'] == 'loop_add':
-            message = data['message']
-            loop_name = message['loop_name']
-            received = message['current_chunk']
-            total = message['number_of_chunks']
-            logging.debug(f'Updating status L: {loop_name}, R: {received}, T: {total}')
+        data = data[1]
+        if data:
+            if data['action'] == 'loop_add':
+                message = data['message']
+                loop_name = message['loop_name']
+                received = message['current_chunk']
+                total = message['number_of_chunks']
+                logging.debug(f'Updating status L: {loop_name}, R: {received}, T: {total}')
 
-            if peer.get_receiving_status().get(loop_name, None) is not None:
-                logging.debug(f'removing chunk {received} from {peer.get_receiving_status()[loop_name]}')
-                peer.update_receiving_status(loop_name, received)
-                if len(peer.get_receiving_status()[loop_name]) == 0:
-                    peer.clear_receiving_status(loop_name)
-                    logging.debug(f'removing finished status: {loop_name} from: {peer.get_receiving_status()}')
-            else:
-                peer.set_receiving_status(loop_name, [i for i in range(1, total + 1)])
-                logging.debug(f'Created new status: {peer.receiving_status}')
-                peer.update_receiving_status(loop_name, received)
-        if data['action'] == 'ping':
-            if data['state']:
-                # TODO: update state in resend_queue
-                logging.debug(f'Received ping with state: {data}')
-                peer.sending_status = data['state']
-                #cls.receive_queue.append(data)
-                #print(data)
+                if peer.get_receiving_status().get(loop_name, None) is not None:
+                    logging.debug(f'removing chunk {received} from {peer.get_receiving_status()[loop_name]}')
+                    peer.update_receiving_status(loop_name, received)
+                    if len(peer.get_receiving_status()[loop_name]) == 0:
+                        peer.clear_receiving_status(loop_name)
+                        logging.debug(f'removing finished status: {loop_name} from: {peer.get_receiving_status()}')
+                else:
+                    peer.set_receiving_status(loop_name, [i for i in range(1, total + 1)])
+                    logging.debug(f'Created new status: {peer.receiving_status}')
+                    peer.update_receiving_status(loop_name, received)
+            if data['action'] == 'ping':
+                if data['state']:
+                    # TODO: update state in resend_queue
+                    logging.debug(f'Received ping with state: {data}')
+                    peer.sending_status = data['state']
+                    #cls.receive_queue.append(data)
+                    #print(data)
 
     @classmethod
     def update_peers(cls, data):
-        new_peers = pickle.loads(data)
+        new_peers = json.loads(data)
         if new_peers != cls.current_peers:
             diff = {key: new_peers[key] for key in set(new_peers) - set(cls.current_peers)}
             for k, v in diff.items():
