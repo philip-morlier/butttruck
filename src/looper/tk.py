@@ -14,11 +14,11 @@ root.resizable(0, 0)
 app = Frame(master=root, width=600, height=100, bg='black')
 
 config = argparse.Namespace()
-config.peers = '192.168.0.16:1111'
+config.peers = None #'192.168.0.16:1111'
 config.sooperlooper_host = None
 config.sooperlooper_port = None
-config.server_host = None
-config.server_port = None
+config.server_host = '0.0.0.0'
+config.server_port = 9999
 
 state = 0
 

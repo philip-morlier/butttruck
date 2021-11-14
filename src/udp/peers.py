@@ -8,6 +8,8 @@ import time
 import json
 from collections import deque
 
+from src.looper.sl_client import SLClient
+
 
 class Peer(socket.socket):
     def __init__(self, addr, x, y, server):
@@ -49,6 +51,7 @@ class PeerClient:
     inputs = []
     outputs = []
     current_peers = {}
+    global_time = 0
 
     @classmethod
     def add_peer(cls, addr, server=False):
@@ -137,7 +140,7 @@ class PeerClient:
 
     @classmethod
     def update_peers(cls, data):
-        new_peers = json.loads(data)
+        new_peers = data
         if new_peers != cls.current_peers:
             diff = {key: new_peers[key] for key in set(new_peers) - set(cls.current_peers)}
             for k, v in diff.items():
@@ -146,9 +149,16 @@ class PeerClient:
             logging.info(f'Adding peers: {diff}. Current is: {cls.current_peers}')
 
     @classmethod
-    def update_time(cls, data):
-        cls.server_time = data
-        logging.info(f'Server time is: {data}')
+    def update_time(cls, global_time):
+        cls.global_time = global_time
+        logging.info(f'Server time is: {global_time}')
+        # local_time = time.monotonic() * 1000
+        # if local_time > global_time:
+        #     cls.time_adjustment = local_time - global_time
+        # if global_time < global_time:
+        #     cls.time_adjustment = global_time - local_time
+
+#        relative_loop_time =
 
     @staticmethod
     def send_msg(peer, msg):
