@@ -97,12 +97,16 @@ class PeerClient:
     @classmethod
     def receive_data(cls, peer):
         data, port = peer.recvfrom(8192)
-        data = json.loads(data)
-        print(data)
+        # data = json.loads(data)
+        # print(data)
         if peer.is_server():
+            from ast import literal_eval
+            # print(literal_eval(data))
+            data = literal_eval(data.decode('utf8'))
             cls.update_peers(data[1])
             cls.update_time(data[0])
         else:
+            data = json.loads(data)
             cls.receive_queue.append((data, peer))
             try:
                 cls.update_status(data, peer)
@@ -111,7 +115,6 @@ class PeerClient:
 
     @classmethod
     def update_status(cls, data, peer):
-        data = data[1]
         if data:
             if data['action'] == 'loop_add':
                 message = data['message']
