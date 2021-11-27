@@ -139,8 +139,7 @@ class PeerClient:
                     #print(data)
 
     @classmethod
-    def update_peers(cls, data):
-        new_peers = pickle.loads(data)
+    def update_peers(cls, new_peers):
         if new_peers != cls.current_peers:
             diff = {key: new_peers[key] for key in set(new_peers) - set(cls.current_peers)}
             for k, v in diff.items():
