@@ -3,6 +3,8 @@ import random
 import pickle
 import time
 
+import stun as stun
+
 
 class BuTTTruckHandler(socketserver.DatagramRequestHandler):
     peers = {}
@@ -11,8 +13,9 @@ class BuTTTruckHandler(socketserver.DatagramRequestHandler):
         """Return a dict of {peer_ip : port} for all peers"""
         data = self.rfile.read()
         requester = self.client_address[0]
+        if requester == '127.0.0.1':
+            _, requester, _ = stun.get.ip_info()
         requesters_peers = self.peers.get(requester, None)
-        print(data)
         if requesters_peers is None:
             requesters_peers = {}
             self.peers[requester] = requesters_peers
