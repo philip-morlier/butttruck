@@ -22,7 +22,7 @@ class WavSlicer:
             PeerClient.send_queue.append((json.dumps(msg), peer))
 
     @staticmethod
-    def slice_and_send(name, file=None, chunk_number=None, peer=None, next_cycle_time=None):
+    def slice_and_send(name, sync_time, file=None, chunk_number=None, peer=None):
         if file is None:
             try:
                 file = WavSlicer.published_loops[name]
@@ -41,24 +41,24 @@ class WavSlicer:
                 if chunk_number is not None:
                     f.seek(chunk_number * LIMIT)
                     chunk = f.read(LIMIT)
-                    WavSlicer.format_and_send_wav_message(chunk, chunk_number, number_of_chunks, name, next_cycle_time, peer=peer)
+                    WavSlicer.format_and_send_wav_message(chunk, chunk_number, number_of_chunks, name, sync_time, peer=peer)
                 else:
                     while f.peek(LIMIT):
                         chunk = f.read(LIMIT)
-                        WavSlicer.format_and_send_wav_message(chunk, count, number_of_chunks, name, next_cycle_time)
+                        WavSlicer.format_and_send_wav_message(chunk, count, number_of_chunks, name, sync_time)
                         count += 1
         except Exception as e:
             logging.warning(f'Error slicing and sending {name} to {peer.get_address}: {e}')
 
     @staticmethod
-    def format_and_send_wav_message(chunk, count, number_of_chunks, name, next_cycle_time, peer=None):
+    def format_and_send_wav_message(chunk, count, number_of_chunks, name, sync_time, peer=None):
         import json
         msg = json.dumps({'action': 'loop_add',
                           'message': {'loop_name': name,
                                       'number_of_chunks': number_of_chunks,
                                       'current_chunk': count,
                                       'chunk_body': chunk.decode('latin1')},
-                          'next_cycle_time': next_cycle_time})
+                          'sync_time': sync_time})
         if peer is not None:
             logging.debug(f'Resend {name}:{count}to {peer.get_address()}')
             PeerClient.send_msg(peer, msg)

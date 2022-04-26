@@ -21,6 +21,7 @@ class SLClient:
     sync_source = -3
     quantize_on = 2
     loop_pos = 0
+    main_loop_pos = 0
     cycle_len = 0
 
     @staticmethod
@@ -36,7 +37,7 @@ class SLClient:
         return SLClient.loops
 
     @staticmethod
-    def hit(command, loop):
+    def hit(command, loop=-3):
         """""/sl/#/hit s:cmdname
         A single hit only, no press-release action"""
         OSCClient.send_message(f'/sl/{loop}/hit', [command])
@@ -51,15 +52,15 @@ class SLClient:
     ##################################################################
 
     @staticmethod
-    def record(loop):
+    def record(loop=-3):
         return SLClient.hit('record', loop)
 
     @staticmethod
-    def overdub(loop):
+    def overdub(loop=-3):
         return SLClient.hit('overdub', loop)
 
     @staticmethod
-    def multiply(loop):
+    def multiply(loop=-3):
         return SLClient.hit('multiply', loop)
 
     @staticmethod
@@ -120,7 +121,7 @@ class SLClient:
         return SLClient.hit('solo', loop)
 
     @staticmethod
-    def pause(loop):
+    def pause(loop=-3):
         return SLClient.hit('pause', loop)
 
     @staticmethod
@@ -323,7 +324,7 @@ class SLClient:
               11: 'Scratching', 12: 'OneShot', 13: 'Substitute', 14: 'Paused', 20: 'OffMuted'}
 
     @staticmethod
-    def get_parameter(control, loop, return_path=None):
+    def get_parameter(control, loop=-3, return_path=None):
         """/sl/#/get s:control  s:return_url  s: return_path
         Which returns an OSC message to the given return url and path with the arguments:
         i: loop_index s: control f: value
@@ -337,8 +338,8 @@ class SLClient:
         SLClient.get_parameter('next_state', loop)
 
     @staticmethod
-    def get_state(loop):
-        SLClient.get_parameter('state', loop, '/state')
+    def get_state(loop=-3):
+        SLClient.get_parameter('state', '/state', loop)
         return SLClient.state
 
     @staticmethod
@@ -348,6 +349,11 @@ class SLClient:
     @staticmethod
     def get_loop_pos(loop):
         SLClient.get_parameter('loop_pos', loop)
+        if loop == 0:
+            SLClient.get_parameter('loop_pos', loop, return_path='/main_loop_pos')
+            return SLClient.main_loop_pos
+        else:
+            return SLClient.loop_pos
 
     @staticmethod
     def get_cycle_len(loop):
@@ -392,17 +398,19 @@ class SLClient:
     ###########################
 
     @staticmethod
-    def load_loop(loop_number, file):
+    def load_loop(file, loop_number=-3):
         """/sl/#/load_loop   s:filename  s:return_url  s:error_path
         loads a given filename into loop, may return error to error_path"""
+        loop_number = SLClient.selected_loop if loop_number is None else loop_number
         OSCClient.send_message(f'/sl/{loop_number}/load_loop',
                                args=[file, return_url, '/load_loop_error'])
 
     @staticmethod
-    def save_loop(file, loop_number=-3, format='wav', endian='big'):
+    def save_loop(file, loop_number=None, format='wav', endian='big'):
         """/sl/#/save_loop   s:filename  s:format  s:endian  s:return_url  s:error_path
         saves current loop to given filename, may return error to error_path
         format and endian currently ignored, always uses 32 bit IEEE float WAV"""
+        loop_number = SLClient.selected_loop if loop_number is None else loop_number
         OSCClient.send_message(f'/sl/{loop_number}/save_loop',
                                args=[file, format, endian, return_url, '/save_loop_error'])
 

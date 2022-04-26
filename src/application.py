@@ -81,6 +81,10 @@ class BuTTTruck:
                 logging.debug(f'Connecting {src} to: {dest}')
                 jack_client.connect(src, dest)
 
+
+        TTTruck.add_main_loop()
+        TTTruck.loop_add()
+
     @classmethod
     def exit(cls):
         logging.info(f'Shutting down')
