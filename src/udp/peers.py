@@ -59,9 +59,9 @@ class PeerClient:
         peer.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         peer.setblocking(False)
 
-        # makes local testing easier
-        # if not server:
-        #    peer.bind(('0.0.0.0', addr[1]))
+        if not server:
+           peer.bind(('0.0.0.0', addr[1]))
+           peer.listen
 
         cls.inputs.append(peer)
         cls.outputs.append(peer)
@@ -69,19 +69,15 @@ class PeerClient:
     count = 100
     @classmethod
     def run(cls):
-        while cls.outputs:
+        while True:
             read, write, exception = select.select(cls.inputs, cls.outputs, cls.outputs)
             msg = None
             try:
                 if cls.send_queue:
-                    msg, peer_resend = cls.send_queue.pop()
-                    if peer_resend is not None:
-                        logging.debug(f'resending to {peer_resend.get_address()}')
-                        cls.send_msg(peer_resend, msg)
-                    else:
-                        for peer in write:
-                            if not peer.server:
-                                cls.send_msg(peer, msg)
+                    msg = cls.send_queue.pop()
+                    for peer in write:
+                        if not peer.server:
+                            cls.send_msg(peer, msg)
                 if cls.count >= 100:
                     cls.count = 0
                     for peer in write:
@@ -97,16 +93,13 @@ class PeerClient:
     @classmethod
     def receive_data(cls, peer):
         data, port = peer.recvfrom(8192)
-        # data = json.loads(data)
-        # print(data)
+        data = json.loads(data)
         if peer.is_server():
-            from ast import literal_eval
-            # print(literal_eval(data))
-            data = literal_eval(data.decode('utf8'))
-            cls.update_peers(data[1])
-            cls.update_time(data[0])
+#            from ast import literal_eval
+#            print(literal_eval(data))
+#            data = literal_eval(data.decode('utf8'))
+            cls.update_peers(data)
         else:
-            data = json.loads(data)
             cls.receive_queue.append((data, peer))
             try:
                 cls.update_status(data, peer)
@@ -150,18 +143,6 @@ class PeerClient:
                 cls.add_peer((k, v))
             cls.current_peers = new_peers
             logging.info(f'Adding peers: {diff}. Current is: {cls.current_peers}')
-
-    @classmethod
-    def update_time(cls, global_time):
-        cls.global_time = global_time
-        logging.info(f'Server time is: {global_time}')
-        # local_time = time.monotonic() * 1000
-        # if local_time > global_time:
-        #     cls.time_adjustment = local_time - global_time
-        # if global_time < global_time:
-        #     cls.time_adjustment = global_time - local_time
-
-#        relative_loop_time =
 
     @staticmethod
     def send_msg(peer, msg):

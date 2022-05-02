@@ -22,11 +22,9 @@ class BuTTTruckHandler(socketserver.DatagramRequestHandler):
 
         # Update the requesters peers if there are more peers available
         if all_peers != requesters_peers:
-            print(self.peers)
             self._update_peers(requester, all_peers, requesters_peers)
 
-        time_in_ms = time.monotonic()
-        response = bytes(json.dumps([time_in_ms, self.peers[requester]]), 'utf8')
+        response = bytes(json.dumps(self.peers[requester]), 'utf8')
         self.wfile.write(response)
 
 

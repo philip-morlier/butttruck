@@ -27,7 +27,6 @@ class TTTruck:
         diff = end - start
         if loop.state != SLClient.states[2]:
             loop.sync_time = start + (diff / 2)
-            print('set sync_time to: ', loop.sync_time)
 
     @classmethod
     def loop_overdub(cls):
@@ -161,7 +160,7 @@ class TTTruck:
         return loop
 
     @classmethod
-    def loop_load(cls, name):
+    def loop_load(cls, name, sync_time):
         existing = cls._index_contains(name)
         if existing:
             loop = existing
@@ -178,13 +177,13 @@ class TTTruck:
         # z = current point your loop0
         # p = next nearest start point
         from math import modf
-        t = loop.sync_time
+        #t = loop.sync_time
         x, y = modf(loop.cycle_length)
         z = SLClient.main_loop_pos
-        if t > z:
-            p = y + t - z
+        if sync_time > z:
+            p = y + sync_time - z
         else:
-            p = y + (1+t) - z
+            p = y + (1+sync_time) - z
         #p = y + (x + (1 - t))
         cls.scheduled_tasks.enter(p, 1, SLClient.pause(SLClient.selected_loop))
 
@@ -215,10 +214,7 @@ class TTTruck:
         if selected < num_loops:
             cls.select_loop(selected + 1)
         else:
-            print(SLClient.selected_loop)
-            print("select first loop")
             cls.select_loop(1)
-            print(SLClient.selected_loop)
 
     @classmethod
     def select_prev_loop(cls):
@@ -316,13 +312,14 @@ class TTTruck:
         return ''.join(random.choices(string.ascii_lowercase + string.digits, k=20))
 
     @classmethod
-    def _write_wav(cls, wav):
-        name = wav[0]
-        bytes = b''.join(wav[1])
+    def _write_wav(cls, name, msg):
+        wav_bytes = b''.join(msg['chunks'])
+        sync_time = msg['sync_time']
+        #bytes = b''.join(wav_bytes)
         with open(Loop.loop_dir + '/' + name + '.wav', 'wb+') as f:
-            f.write(bytes)
+            f.write(wav_bytes)
             logging.debug(f'Wrote file: {f}')
-        TTTruck.loop_load(name)
+        TTTruck.loop_load(name, sync_time)
 
 
     @classmethod

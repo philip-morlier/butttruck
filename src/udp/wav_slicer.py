@@ -63,4 +63,5 @@ class WavSlicer:
             logging.debug(f'Resend {name}:{count}to {peer.get_address()}')
             PeerClient.send_msg(peer, msg)
         else:
-            PeerClient.send_queue.append((msg, peer))
+            logging.debug(f'Sending {name}:{count}')
+            PeerClient.send_queue.append(msg)
