@@ -41,7 +41,7 @@ class WavSlicer:
                 if chunk_number is not None:
                     f.seek(chunk_number * LIMIT)
                     chunk = f.read(LIMIT)
-                    WavSlicer.format_and_send_wav_message(chunk, chunk_number, number_of_chunks, name, sync_time, peer=peer)
+                    WavSlicer.format_and_send_wav_message(chunk, number_of_chunks, name, sync_time, peer=peer)
                 else:
                     while f.peek(LIMIT):
                         chunk = f.read(LIMIT)
@@ -57,8 +57,8 @@ class WavSlicer:
                           'message': {'loop_name': name,
                                       'number_of_chunks': number_of_chunks,
                                       'current_chunk': count,
-                                      'chunk_body': chunk.decode('latin1')},
-                          'sync_time': sync_time})
+                                      'chunk_body': chunk.decode('latin1'),
+                                      'sync_time': sync_time}})
         if peer is not None:
             logging.debug(f'Resend {name}:{count}to {peer.get_address()}')
             PeerClient.send_msg(peer, msg)

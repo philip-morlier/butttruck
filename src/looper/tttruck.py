@@ -146,7 +146,7 @@ class TTTruck:
             # FIXME: hack to make the register_auto_updates work on first loop.
             time.sleep(0.5)
 
-        cls.select_loop(1)
+        #cls.select_loop(1)
             # TODO: do we want to set sync and quantize???
             # SLClient.set_sync_source(-3)
             # SLClient.set_quantize(2, new_loop_number)
@@ -166,10 +166,10 @@ class TTTruck:
             loop = existing
         else:
             loop = cls.loop_add()
-        import pdb;pdb.set_trace()
+        SLClient.load_loop(loop.wav_file)
         if SLClient.get_state() != 'Paused':
             SLClient.pause()
-        SLClient.load_loop(loop.wav_file)
+
 
         # t = point in my loop0 I began
         # x = decimal of my cycle_length

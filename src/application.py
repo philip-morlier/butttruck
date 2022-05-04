@@ -10,9 +10,6 @@ from src.udp.peers import PeerClient
 import src.looper.midi as midi
 from src.udp.wav_slicer import WavSlicer
 
-PROCESS_LOOP_PERIOD = 1
-PROCESS_INCOMING_PERIOD = 0.05
-RESEND_PERIOD = 0.2
 
 class BuTTTruck:
     scheduled_tasks = scheduler(time.time, time.sleep)
@@ -60,9 +57,8 @@ class BuTTTruck:
         BuTTTruck.pool.submit(OSCClient.start(host=sl_host, port=sl_port, debug=debug))
         OSCServer.start()
         BuTTTruck.pool.submit(PeerClient.run)
-        BuTTTruck.pool.submit(process_incoming)
-        BuTTTruck.pool.submit(resend_missing_chunks)
-        BuTTTruck.pool.submit(process_loops)
+        BuTTTruck.pool.submit(PeerClient.process_incoming)
+        BuTTTruck.pool.submit(PeerClient.resend_missing_chunks)
         BuTTTruck.pool.submit(midi.run)
 
 
@@ -98,84 +94,6 @@ class BuTTTruck:
         cls.pool.shutdown(wait=False)
         logging.info(f'Goddbye!')
 
-
-loops = {}
-
-def process_incoming():
-    while True:
-        while PeerClient.receive_queue:
-            msg, peer = PeerClient.receive_queue.pop()
-            try:
-                print(msg)
-                if msg['action']:
-                    action = msg['action']
-                    if action == 'ping':
-                        state = msg['state']
-                        peer.sending_status = state
-                        logging.debug(f'Received ping from: {peer.get_address()}. Current state: {state}')
-                    if action == 'loop_add':
-                        message = msg['message']
-                        loop_name = message['loop_name']
-                        current_chunk = message['current_chunk']
-                        if loops.get(loop_name, None) is None:
-                            loops[loop_name] = {}
-                            loops[loop_name]['chunks'] = ([None for i in range(message['number_of_chunks'])])
-                            loops[loop_name]['sync_time'] = message[sync_time]
-                            loops[loop_name]['chunks'].pop(current_chunk - 1)
-                            loops[loop_name]['chunks'].insert(current_chunk - 1, message['chunk_body'].encode('latin1'))
-                            logging.debug(f'Received chunk: {current_chunk} for {loop_name} from: {peer.get_address()}.')
-                        else:
-                            loops[loop_name]['chunks'].pop(current_chunk - 1)
-                            loops[loop_name]['chunks'].insert(current_chunk - 1, message['chunk_body'].encode('latin1'))
-                            logging.debug(f'Received chunk {current_chunk} from: {peer.get_address()}. ')
-
-                    if action == 'loop_modify':
-                        message = msg['message']
-                        logging.debug(f'Modifying : {message} from: {peer.get_address()}.')
-                        # {'action': 'loop_add', 'message': {'loop_name': name, {'param': value},
-                        loop_name = message['loop_name']
-                        for param, value in message.items():
-                            if param == 'loop_name':
-                                continue
-                            TTTruck.set_parameter(loop_name, param, value)
-            except Exception as e:
-                logging.warning(f'Unable to receive data {msg} from: {peer.get_address()}')
-        time.sleep(PROCESS_INCOMING_PERIOD)
-
-
-def resend_missing_chunks():
-    while True:
-        for peer in PeerClient.outputs:
-            status = peer.get_sending_status()
-            if status:
-                for name, chunks in status.items():
-                    for chunk in chunks:
-                        logging.debug(f'resending {peer}, {name}, {chunks}')
-                        # TODO: sync_time
-                        WavSlicer.slice_and_send(name, 0, chunk_number=chunk, peer=peer)
-        time.sleep(RESEND_PERIOD)
-#    BuTTTruck.scheduled_tasks.enter(0.5, 1, resend_missing_chunks)
-    # for peer, state in resend_queue.items():
-    #     for name, chunks in state.items():
-    #         logging.debug(f'resending {peer}, {name}, {chunks}')
-    #         for chunk in chunks:
-    #             WavSlicer.slice_and_send(name, chunk_number=chunk, peer=peer)
-    #             time.sleep(0.01)
-
-
-def process_loops():
-    while True:
-        completed = []
-        for k, v in loops.items():
-            if not v['chunks'].__contains__(None):
-            #if not v.__contains__(None):
-                logging.debug(f'Received complete loop {k}')
-                completed.append((k,v))
-        while completed:
-            name, msg = completed.pop()
-            loops.pop(name)
-            TTTruck._write_wav(name, msg)
-        time.sleep(PROCESS_LOOP_PERIOD)
 
 
 if __name__ == '__main__':
