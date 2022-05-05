@@ -61,8 +61,8 @@ class Loop:
         #if SLClient.quantize_on == 3:
         print(self.changes)
         SLClient.set_quantize(0) if SLClient.quantize_on == 3.0 else SLClient.set_quantize(SLClient.quantize_on + 1)
-    def load_loop(self):
-        SLClient.load_loop(self.wav_file)
+    def load_loop(self, loop_number):
+        SLClient.load_loop(self.wav_file, loop_number)
         #TODO: Schedule playback
         if self.state == 4:
             SLClient.pause()
@@ -75,15 +75,14 @@ class Loop:
         # p = next nearest start point
 
         from math import modf
-        x, y = modf(loop.cycle_length)
+        x, y = modf(self.cycle_length)
         z = SLClient.main_loop_pos
         if self.sync_time > z:
             p = y + self.sync_time - z
         else:
             p = y + (1 + self.sync_time) - z
         #p = y + (x + (1 - t))
-        import pdb;pdb.set_trace()
-        SLClient.scheduled_tasks.enter(p, 1, SLClient.pause(cls.selected_loop_num))
+        SLClient.scheduled_tasks.enter(p, 1, SLClient.pause(loop_number))
 
 
     def _update_changes(self, parameter, value=None):

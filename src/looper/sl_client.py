@@ -403,7 +403,6 @@ class SLClient:
     def load_loop(file, loop_number=-3):
         """/sl/#/load_loop   s:filename  s:return_url  s:error_path
         loads a given filename into loop, may return error to error_path"""
-        loop_number = SLClient.selected_loop if loop_number is None else loop_number
         OSCClient.send_message(f'/sl/{loop_number}/load_loop',
                                args=[file, return_url, '/load_loop_error'])
 

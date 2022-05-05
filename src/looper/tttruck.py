@@ -130,7 +130,7 @@ class TTTruck:
         if new_loop_number == 1:
             # FIXME: hack to make the register_auto_updates work on first loop.
             time.sleep(0.5)
-        return loop
+        return loop, new_loop_number
 
     @classmethod
     def loop_load(cls, name, sync_time):
@@ -138,9 +138,9 @@ class TTTruck:
         if loop_number:
             SLClient.set_selected_loop_num(loop_number)
         else:
-            loop = cls.loop_add(name=name)
+            loop, loop_number = cls.loop_add(name=name)
         loop.set_sync_time(sync_time)
-        loop.load_loop()
+        loop.load_loop(loop_number)
 
 
     @classmethod
