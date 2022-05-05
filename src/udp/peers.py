@@ -6,65 +6,23 @@ import select
 import socket
 import time
 import json
-from collections import deque
 
-from src.looper.sl_client import SLClient
+from src.looper.tttruck import TTTruck
+from src.udp.peer import Peer
+from src.udp.messages import send_queue, receive_queue
 
 PROCESS_INCOMING_PERIOD = 0.5
 PROCESS_LOOP_PERIOD = 5
 RESEND_PERIOD = 1
-
-class Peer(socket.socket):
-    def __init__(self, addr, x, y, server):
-        super().__init__(x, y)
-        self.address = addr
-        self.server = server
-        self.receiving_status = {}
-        self.sending_status = {}
-
-    def get_address(self):
-        return self.address
-
-    def is_server(self):
-        return self.server
-
-    def set_receiving_status(self, status):
-        self.receiving_status = status
-
-    def update_receiving_status(self, state):
-        for k,v in state.items():
-            self.receiving_status[k] = v
-
-    def clear_receiving_status(self, loop):
-        self.receiving_status.pop(loop)
-
-    def get_receiving_status(self):
-        return self.receiving_status
-
-    def update_sending_status(self, loop, chunk):
-        self.sending_status[loop].remove(chunk)
-
-    def set_sending_status(self, loop, status):
-        self.sending_status[loop] = status
-
-    def clear_sending_status(self, loop):
-        self.sending_status.pop(loop)
-
-    def get_sending_status(self):
-        return self.sending_status
-
 
 class PeerClient:
     """Needs to create a standard 'ping' message which conforms to shared data structure"""
 
     server = None
     data = b''
-    receive_queue = deque()
-    send_queue = deque()
     inputs = []
     outputs = []
     current_peers = {}
-    global_time = 0
     loops = {}
 
     @classmethod
@@ -84,10 +42,9 @@ class PeerClient:
     def run(cls):
         while True:
             read, write, exception = select.select(cls.inputs, cls.outputs, [])
-            msg = None
             try:
-                if cls.send_queue:
-                    msg = cls.send_queue.pop()
+                if send_queue:
+                    msg = send_queue.pop()
                     for peer in write:
                         if not peer.server:
                             cls.send_msg(peer, msg)
@@ -103,16 +60,9 @@ class PeerClient:
         data, port = peer.recvfrom(8192)
         data = json.loads(data)
         if peer.is_server():
-#            from ast import literal_eval
-#            print(literal_eval(data))
-#            data = literal_eval(data.decode('utf8'))
             cls.update_peers(data)
         else:
-            cls.receive_queue.append((data, peer))
-            # try:
-            #     cls.update_status(data, peer)
-            # except Exception as e:
-            #     logging.warning(f'Unable to update status: {e}')
+            receive_queue.append((data, peer))
 
     @classmethod
     def update_status(cls, data, peer):
@@ -137,14 +87,10 @@ class PeerClient:
                         peer.update_sending_status(loop_name, received)
                         logging.debug(f'Created new status: {peer.sending_status}')
                 if data['action'] == 'ping':
-                    #print('RECIEVED PING WITH: ', data['message'])
                     logging.debug(f'Received ping with state: {data}')
-                    #TODO: Update?
                     peer.update_receiving_status(loop_name, data['state'])
         except Exception as e:
-            # TODO
-            pass
-            #import pdb;pdb.set_trace()
+            print(e)
 
     @classmethod
     def update_peers(cls, data):
@@ -161,7 +107,7 @@ class PeerClient:
         try:
             peer.sendto(msg.encode(), peer.get_address())
         except Exception as error:
-            logging.warning(f"Unable to send_msg {error}")
+            logging.warning(f"Unable to send_msg", error)
 
     @staticmethod
     def send_ping(peer):
@@ -187,8 +133,8 @@ class PeerClient:
     @classmethod
     def process_incoming(cls):
         while True:
-            while cls.receive_queue:
-                msg, peer = cls.receive_queue.pop()
+            while receive_queue:
+                msg, peer = receive_queue.pop()
                 try:
                     if msg['action']:
                         action = msg['action']
@@ -234,10 +180,9 @@ class PeerClient:
 
     @classmethod
     def process_loop(cls, loop_name):
-#        import pdb; pdb.set_trace()
         logging.debug(f'Received complete loop {loop_name}')
-        msg = completed.pop(loop_name)
-        TTTruck._write_wav(loop_name, msg)
+        loop = cls.loops.pop(loop_name)
+        TTTruck.add_remote_loop(loop_name, loop)
 
     @classmethod
     def resend_missing_chunks(cls):
@@ -255,7 +200,7 @@ class PeerClient:
 
     @classmethod
     def exit(cls):
-        cls.receive_queue = None
-        cls.send_queue = None
+        receive_queue = None
+        send_queue = None
         cls.inputs = None
         cls.outputs = None
