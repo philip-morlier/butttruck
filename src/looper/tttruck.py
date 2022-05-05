@@ -47,9 +47,9 @@ class TTTruck:
     @classmethod
     def publish_loop(cls):
         loop = cls._get_loop()
-        SLClient.save_loop(self.wav_file)
+        SLClient.save_loop(loop.wav_file)
         time.sleep(2)
-        WavSlicer.slice_and_send(loop)
+        WavSlicer.send_new_loop_message(loop)
 
     @classmethod
     def publish_selected_changes(cls):
@@ -145,8 +145,8 @@ class TTTruck:
 
     @classmethod
     def _get_loop_by_name(cls, loop_name):
-        for idx, name in cls.loop_index.items():
-            if name == loop_name:
+        for idx, loop in cls.loop_index.items():
+            if loop.name == loop_name:
                 return cls.loop_index[idx], idx
         return None, None
 

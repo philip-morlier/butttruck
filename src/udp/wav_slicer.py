@@ -24,13 +24,10 @@ class WavSlicer:
 
     @staticmethod
     def slice_and_send(loop, chunk_number=None, peer=None):
-        if loop.wav_file is None:
-            try:
-                file = WavSlicer.published_loops[loop.name]
-            except Exception as e:
-                logging.warning(f'Unable to send: {loop.name} from file: {loop.file}', e)
-                # TODO: inform peer we no longer have file
-                return
+        if loop is None:
+            logging.warning(f'Unable to send loop')
+            # TODO: inform peer we no longer have file
+            return
 
         try:
             count = 1
@@ -38,18 +35,39 @@ class WavSlicer:
             number_of_chunks = math.ceil(size_in_bytes / LIMIT)
             logging.debug(f'Sending {loop.name}, file: {loop.wav_file}, chunk: {chunk_number} to {peer}')
             WavSlicer.published_loops[loop.name] = loop.wav_file
-            with open(file, 'rb') as f:
+            with open(loop.wav_file, 'rb') as f:
                 if chunk_number is not None:
                     f.seek(chunk_number * LIMIT)
                     chunk = f.read(LIMIT)
-                    WavSlicer.format_and_send_wav_message(chunk, number_of_chunks, loop.name, loop.sync_time, peer=peer)
+                    WavSlicer.format_and_send_wav_message(chunk, chunk_number, number_of_chunks, loop.name, loop.sync_time, peer=peer)
                 else:
                     while f.peek(LIMIT):
                         chunk = f.read(LIMIT)
-                        WavSlicer.format_and_send_wav_message(chunk, count, number_of_chunks, loop.name, loopsync_time)
+                        WavSlicer.format_and_send_wav_message(chunk, count, number_of_chunks, loop.name, loop.sync_time)
                         count += 1
         except Exception as e:
-            logging.warning(f'Error slicing and sending {name} to {peer.get_address}: {e}')
+            logging.warning(f'Error slicing and sending {loop.name}: ', e)
+
+    @staticmethod
+    def send_new_loop_message(loop, number_of_chunks, sync_time):
+        #TODO: verify receipt
+        # maybe in loop_add in PeerClient?
+        import json
+        msg = json.dumps({'action': 'new_loop',
+                          'message':  {'loop_name': name,
+                                      'number_of_chunks': number_of_chunks,
+                                      'sync_time': sync_time}})
+        send_queue.append(msg)
+        WavSlicer.slice_and_send(loop)
+
+    @staticmethod
+    def request_new_loop_message(name, peer):
+        import json
+        msg = json.dumps({'action': 'request_new_loop',
+                          'message': {'loop_name': name}})
+        logging.debug(f'Request new_loop info from {peer.get_address()} for {name}')
+        peer.sendto(msg.encode(), peer.get_address())
+
 
     @staticmethod
     def format_and_send_wav_message(chunk, count, number_of_chunks, name, sync_time, peer=None):

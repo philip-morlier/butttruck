@@ -8,10 +8,11 @@ import time
 import json
 
 from src.looper.tttruck import TTTruck
+from src.udp.wav_slicer import WavSlicer
 from src.udp.peer import Peer
 from src.udp.messages import send_queue, receive_queue
 
-PROCESS_INCOMING_PERIOD = 0.5
+PROCESS_INCOMING_PERIOD = 0.2
 PROCESS_LOOP_PERIOD = 5
 RESEND_PERIOD = 1
 
@@ -88,7 +89,7 @@ class PeerClient:
                         logging.debug(f'Created new status: {peer.sending_status}')
                 if data['action'] == 'ping':
                     logging.debug(f'Received ping with state: {data}')
-                    peer.update_receiving_status(loop_name, data['state'])
+                    peer.update_receiving_status(data['state'])
         except Exception as e:
             print(e)
 
@@ -142,23 +143,49 @@ class PeerClient:
                         #     state = msg['state']
                         #     peer.receiving_status = state
                         #     logging.debug(f'Received ping from: {peer.get_address()}. Current state: {state}')
-                        if action == 'loop_add':
+                        if action  == 'new_loop':
+                            message = data['message']
+                            loop_name = message['loop_name']
+                            total = message['number_of_chunks']
+                            if cls.loops.get(loop_name, None) is not None:
+
+                                if len(cls.loops[loop_name]['chunks']) == total:
+                                    # FIXME: loop ops like insert and replace will fail here
+                                    print('Attempting to replace loop with identical loop')
+                                else:
+                                    print(f'Replacing {loop_name}')
+                                    cls.loops[loop_name]['chunks'] = [None for i in range(total)]
+                            else:
+                                print(f'Creating new loop: {loop_name} of size: {total}')
+                                cls.loops[loop_name] = {}
+                                cls.loops[loop_name]['chunks'] = [None for i in range(total)]
+                                cls.loops[loop_name]['sync_time'] = message['sync_time']
+
+                        elif action == 'request_new_loop':
+                            loop_name = data['message']['loop_name']
+                            loop = TTTruck._get_loop_by_name(loop_name)[1]
+                            number_of_chunks = len(cls.loops[loop_name]['chunks'])
+                            WavSlicer.send_new_loop_message(loop, number_of_chunks)
+
+                        elif action == 'loop_add':
                             message = msg['message']
                             loop_name = message['loop_name']
                             current_chunk = message['current_chunk']
                             if cls.loops.get(loop_name, None) is None:
-                                cls.loops[loop_name] = {}
-                                cls.loops[loop_name]['chunks'] = [None for i in range(message['number_of_chunks'])]
-                                cls.loops[loop_name]['sync_time'] = message['sync_time']
-                                cls.loops[loop_name]['chunks'].pop(current_chunk - 1)
-                                cls.loops[loop_name]['chunks'].insert(current_chunk - 1, message['chunk_body'].encode('latin1'))
-                                logging.debug(f'Received chunk: {current_chunk} for {loop_name} from: {peer.get_address()}.')
+                                #TODO: use this to determine if we've received a repeat or replace of loop
+                                WavSlicer.send_request_new_loop(name, peer)
+                                # cls.loops[loop_name] = {}
+                                # cls.loops[loop_name]['chunks'] = [None for i in range(message['number_of_chunks'])]
+                                # cls.loops[loop_name]['sync_time'] = message['sync_time']
+                                # cls.loops[loop_name]['chunks'].pop(current_chunk - 1)
+                                # cls.loops[loop_name]['chunks'].insert(current_chunk - 1, message['chunk_body'].encode('latin1'))
+                                # logging.debug(f'Received chunk: {current_chunk} for {loop_name} from: {peer.get_address()}.')
                             else:
                                 cls.loops[loop_name]['chunks'].pop(current_chunk - 1)
                                 cls.loops[loop_name]['chunks'].insert(current_chunk - 1, message['chunk_body'].encode('latin1'))
                                 logging.debug(f'Received chunk {current_chunk} from: {peer.get_address()}. ')
 
-                        if action == 'loop_modify':
+                        elif action == 'loop_modify':
                             message = msg['message']
                             logging.debug(f'Modifying : {message} from: {peer.get_address()}.')
                             # {'action': 'loop_add', 'message': {'loop_name': name, {'param': value},
@@ -192,8 +219,9 @@ class PeerClient:
                 for name, chunks in status.items():
                     if chunks:
                         for chunk in chunks:
+                            loop, loop_number = TTTruck._get_loop_by_name(name)
                             logging.debug(f'resending {peer}, {name}, {chunks}')
-                            WavSlicer.slice_and_send(name, 0, chunk_number=chunk, peer=peer)
+                            WavSlicer.slice_and_send(loop, chunk_number=chunk, peer=peer)
             time.sleep(RESEND_PERIOD)
 
 
