@@ -46,9 +46,10 @@ class PeerClient:
             try:
                 if send_queue:
                     msg = send_queue.pop()
+                    msg_json = json.dumps(msg)
                     for peer in write:
                         if not peer.server:
-                            cls.send_msg(peer, msg)
+                            cls.send_msg(peer, msg, msg_json)
                 for peer in read:
                     cls.receive_data(peer)
                 time.sleep(0.01)
@@ -66,34 +67,6 @@ class PeerClient:
             receive_queue.append((data, peer))
 
     @classmethod
-    def update_status(cls, data, peer):
-        try:
-            if data:
-                if data['action'] == 'loop_add':
-                    message = data['message']
-                    loop_name = message['loop_name']
-                    received = message['current_chunk']
-                    total = message['number_of_chunks']
-                    #                logging.debug(f'Updating status L: {loop_name}, R: {received}, T: {total}')
-
-                    if peer.get_sending_status().get(loop_name, None) is not None:
-                        logging.debug(f'removing chunk {received} from {peer.get_sending_status()[loop_name]}')
-                        peer.update_sending_status(loop_name, received)
-                        if len(peer.get_sending_status()[loop_name]) == 0:
-                            logging.debug(f'removing finished status: {loop_name} from: {peer.get_sending_status()}')
-                            peer.clear_sending_status(loop_name)
-                            cls.process_loop(loop_name)
-                    else:
-                        peer.set_sending_status(loop_name, [i for i in range(1, total + 1)])
-                        peer.update_sending_status(loop_name, received)
-                        logging.debug(f'Created new status: {peer.sending_status}')
-                if data['action'] == 'ping':
-                    logging.debug(f'Received ping with state: {data}')
-                    peer.update_receiving_status(data['state'])
-        except Exception as e:
-            print(e)
-
-    @classmethod
     def update_peers(cls, data):
         new_peers = data
         if new_peers != cls.current_peers:
@@ -104,9 +77,13 @@ class PeerClient:
             logging.info(f'Adding peers: {diff}. Current is: {cls.current_peers}')
 
     @staticmethod
-    def send_msg(peer, msg):
+    def send_msg(peer, msg, json):
         try:
-            peer.sendto(msg.encode(), peer.get_address())
+            if msg['action'] == 'new_loop':
+                peer.waiting_ack.add(msg['message']['loop_name'])
+            if msg['action'] == 'loop_add' and not peer.get_receiving_status().get(msg['message']['loop_name'], False):
+                return
+            peer.sendto(json.encode(), peer.get_address())
         except Exception as error:
             logging.warning(f"Unable to send_msg", error)
 
@@ -117,19 +94,43 @@ class PeerClient:
         else:
             import json
             status = peer.get_sending_status()
+            if peer.waiting_ack:
+                for loop_name in peer.waiting_ack:
+                    logging.debug(f'Waiting ack for {loop_name} from {peer.get_address()}')
+                    WavSlicer.send_new_loop_message(TTTruck._get_loop_by_name(loop_name)[0], peer=peer)
             if status:
                 for k, v in status.items():
                     count = math.ceil(len(v) / 100)
                     if len(v) == 0:
                         peer.clear_sending_status(k)
-                    for i in range(count):
-                        message = json.dumps({'action': 'ping', 'message': {}, 'state': {k:v[i*100:i*100+100]}})
-                        logging.debug(f'Pinging {peer.get_address()}. Current state is: {status}')
-                        peer.sendto(message.encode(), peer.get_address())
+                    else:
+                        for i in range(count):
+                            message = json.dumps({'action': 'ping', 'message': {}, 'state': {k:v[i*100:i*100+100]}})
+                            logging.debug(f'Pinging {peer.get_address()}. Current state is: {status}')
+                            peer.sendto(message.encode(), peer.get_address())
             else:
                 message = json.dumps({'action': 'ping', 'message': {}, 'state': {}})
                 logging.debug(f'Pinging {peer.get_address()}. Current state is: {status}')
                 peer.sendto(message.encode(), peer.get_address())
+
+    @classmethod
+    def create_empty_loop(cls, peer, loop_name, total, message):
+        cls.loops[loop_name]['chunks'] = [None for i in range(total)]
+        cls.loops[loop_name]['sync_time'] = message['sync_time']
+        peer.set_sending_status(loop_name, [i for i in range(1, total + 1)])
+
+    @classmethod
+    def accept_loop_chunk(cls, peer, loop_name, current_chunk, chunk_body):
+        try:
+            if not peer.get_sending_status().get(loop_name, False):
+                return
+            cls.loops[loop_name]['chunks'].pop(current_chunk)
+            cls.loops[loop_name]['chunks'].insert(current_chunk, chunk_body.encode('latin1'))
+        except Exception as e:
+            print('Accept ', e)
+        if peer.update_sending_status(loop_name, current_chunk):
+            cls.process_loop(loop_name)
+            peer.clear_receiving_status(loop_name)
 
     @classmethod
     def process_incoming(cls):
@@ -139,52 +140,46 @@ class PeerClient:
                 try:
                     if msg['action']:
                         action = msg['action']
-                        # if action == 'ping':
-                        #     state = msg['state']
-                        #     peer.receiving_status = state
-                        #     logging.debug(f'Received ping from: {peer.get_address()}. Current state: {state}')
-                        if action  == 'new_loop':
-                            message = data['message']
+                        if action == 'ping':
+                            peer.update_receiving_status(msg['state'])
+                            logging.debug(f"Received ping from: {peer.get_address()}. Current state: {msg['state']}")
+                        elif action == 'ack':
+                            message = msg['message']
+                            loop_name = message['loop_name']
+                            WavSlicer.send(peer, loop_name)
+                            peer.waiting_ack.discard(loop_name)
+                            logging.debug(f'new_loop {loop_name} acknowledged')
+                        elif action  == 'new_loop':
+                            message = msg['message']
                             loop_name = message['loop_name']
                             total = message['number_of_chunks']
                             if cls.loops.get(loop_name, None) is not None:
-
                                 if len(cls.loops[loop_name]['chunks']) == total:
                                     # FIXME: loop ops like insert and replace will fail here
                                     print('Attempting to replace loop with identical loop')
                                 else:
                                     print(f'Replacing {loop_name}')
-                                    cls.loops[loop_name]['chunks'] = [None for i in range(total)]
+                                    cls.create_empty_loop(peer, loop_name, total, message)
                             else:
                                 print(f'Creating new loop: {loop_name} of size: {total}')
                                 cls.loops[loop_name] = {}
-                                cls.loops[loop_name]['chunks'] = [None for i in range(total)]
-                                cls.loops[loop_name]['sync_time'] = message['sync_time']
-
+                                cls.create_empty_loop(peer, loop_name, total, message)
+                            WavSlicer.send_ack(peer, loop_name)
                         elif action == 'request_new_loop':
-                            loop_name = data['message']['loop_name']
-                            loop = TTTruck._get_loop_by_name(loop_name)[1]
-                            number_of_chunks = len(cls.loops[loop_name]['chunks'])
-                            WavSlicer.send_new_loop_message(loop, number_of_chunks)
+                            loop_name = msg['message']['loop_name']
+                            loop, loop_number = TTTruck._get_loop_by_name(loop_name)
+                            WavSlicer.send_new_loop_message(loop)
 
                         elif action == 'loop_add':
                             message = msg['message']
                             loop_name = message['loop_name']
                             current_chunk = message['current_chunk']
                             if cls.loops.get(loop_name, None) is None:
-                                #TODO: use this to determine if we've received a repeat or replace of loop
-                                WavSlicer.send_request_new_loop(name, peer)
-                                # cls.loops[loop_name] = {}
-                                # cls.loops[loop_name]['chunks'] = [None for i in range(message['number_of_chunks'])]
-                                # cls.loops[loop_name]['sync_time'] = message['sync_time']
-                                # cls.loops[loop_name]['chunks'].pop(current_chunk - 1)
-                                # cls.loops[loop_name]['chunks'].insert(current_chunk - 1, message['chunk_body'].encode('latin1'))
-                                # logging.debug(f'Received chunk: {current_chunk} for {loop_name} from: {peer.get_address()}.')
+                                WavSlicer.send_request_new_loop_message(name, peer)
                             else:
-                                cls.loops[loop_name]['chunks'].pop(current_chunk - 1)
-                                cls.loops[loop_name]['chunks'].insert(current_chunk - 1, message['chunk_body'].encode('latin1'))
+                                #TODO: use this to determine if we've received a repeat or replace of loop
+                                cls.accept_loop_chunk(peer, loop_name, current_chunk, message['chunk_body'])
                                 logging.debug(f'Received chunk {current_chunk} from: {peer.get_address()}. ')
-
                         elif action == 'loop_modify':
                             message = msg['message']
                             logging.debug(f'Modifying : {message} from: {peer.get_address()}.')
@@ -194,34 +189,36 @@ class PeerClient:
                                 if param == 'loop_name':
                                     continue
                                 TTTruck.set_parameter(loop_name, param, value)
-
-                        cls.update_status(msg, peer)
                 except Exception as e:
-                    logging.warning(f'Unable to receive data {msg} from: {peer.get_address()}', e)
-                    import pdb;pdb.set_trace()
-            for peer in cls.outputs:
-                cls.send_ping(peer)
-
+                    #logging.warning(f'Unable to receive data {msg} from: {peer.get_address()}', e)
+                    print('Incoming ', e)
+                    #import pdb;pdb.set_trace()
             time.sleep(PROCESS_INCOMING_PERIOD)
 
 
     @classmethod
     def process_loop(cls, loop_name):
         logging.debug(f'Received complete loop {loop_name}')
-        loop = cls.loops.pop(loop_name)
+        #TODO: to pop or not to pop? Storing all wav_bytes is faster but consumes memory
+        loop = cls.loops[loop_name]
         TTTruck.add_remote_loop(loop_name, loop)
 
     @classmethod
     def resend_missing_chunks(cls):
         while True:
             for peer in cls.outputs:
-                status = peer.get_receiving_status()
-                for name, chunks in status.items():
-                    if chunks:
-                        for chunk in chunks:
-                            loop, loop_number = TTTruck._get_loop_by_name(name)
-                            logging.debug(f'resending {peer}, {name}, {chunks}')
-                            WavSlicer.slice_and_send(loop, chunk_number=chunk, peer=peer)
+                try:
+                    #FIXME Concurrent modification of status
+                    status = peer.get_receiving_status()
+                    for name, chunks in status.items():
+                        if chunks:
+                            for chunk in chunks:
+                                loop, loop_number = TTTruck._get_loop_by_name(name)
+                                logging.debug(f'resending {peer.get_address()}, {name}, {chunks}')
+                                WavSlicer.send(peer, loop.name, chunk_number=chunk)
+                    cls.send_ping(peer)
+                except Exception as e:
+                    print('Resending ', e)
             time.sleep(RESEND_PERIOD)
 
 

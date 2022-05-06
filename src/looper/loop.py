@@ -58,8 +58,6 @@ class Loop:
         SLClient.multiply()
 
     def quantize(self):
-        #if SLClient.quantize_on == 3:
-        print(self.changes)
         SLClient.set_quantize(0) if SLClient.quantize_on == 3.0 else SLClient.set_quantize(SLClient.quantize_on + 1)
     def load_loop(self, loop_number):
         SLClient.load_loop(self.wav_file, loop_number)
