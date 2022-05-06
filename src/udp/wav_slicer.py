@@ -78,7 +78,6 @@ class WavSlicer:
                           'message': {'loop_name': name,
                                       'current_chunk': chunk_number,
                                       'chunk_body': chunk.decode('latin1')}})
-        logging.debug(f'Sending {name}:{chunk_number} to {peer.get_address()}')
         peer.sendto(msg.encode(), peer.get_address())
 
     @staticmethod

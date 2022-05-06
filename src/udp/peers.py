@@ -30,7 +30,7 @@ class PeerClient:
     def add_peer(cls, addr, server=False):
         peer = Peer(addr, socket.AF_INET, socket.SOCK_DGRAM, server)
         peer.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        peer.setblocking(False)
+        peer.setblocking(True)
 
         if not server:
            peer.bind(('0.0.0.0', addr[1]))
@@ -99,15 +99,16 @@ class PeerClient:
                     logging.debug(f'Waiting ack for {loop_name} from {peer.get_address()}')
                     WavSlicer.send_new_loop_message(TTTruck._get_loop_by_name(loop_name)[0], peer=peer)
             if status:
+                state = {}
                 for k, v in status.items():
-                    count = math.ceil(len(v) / 100)
                     if len(v) == 0:
                         peer.clear_sending_status(k)
                     else:
-                        for i in range(count):
-                            message = json.dumps({'action': 'ping', 'message': {}, 'state': {k:v[i*100:i*100+100]}})
-                            logging.debug(f'Pinging {peer.get_address()}. Current state is: {status}')
-                            peer.sendto(message.encode(), peer.get_address())
+                        state[k] = v[:100]
+                        logging.debug(f'Pinging {peer.get_address()} with: {s}. Current state is: {status}')
+                        break
+                message = json.dumps({'action': 'ping', 'message': {}, 'state': state})
+                peer.sendto(message.encode(), peer.get_address())
             else:
                 message = json.dumps({'action': 'ping', 'message': {}, 'state': {}})
                 logging.debug(f'Pinging {peer.get_address()}. Current state is: {status}')
@@ -123,6 +124,7 @@ class PeerClient:
     def accept_loop_chunk(cls, peer, loop_name, current_chunk, chunk_body):
         try:
             if not peer.get_sending_status().get(loop_name, False):
+                logging.debug(f'Accepting chunk for completed loop. Ignoring')
                 return
             cls.loops[loop_name]['chunks'].pop(current_chunk)
             cls.loops[loop_name]['chunks'].insert(current_chunk, chunk_body.encode('latin1'))
@@ -130,7 +132,7 @@ class PeerClient:
             print('Accept ', e)
         if peer.update_sending_status(loop_name, current_chunk):
             cls.process_loop(loop_name)
-            peer.clear_receiving_status(loop_name)
+            peer.clear_sending_status(loop_name)
 
     @classmethod
     def process_incoming(cls):
@@ -146,9 +148,13 @@ class PeerClient:
                         elif action == 'ack':
                             message = msg['message']
                             loop_name = message['loop_name']
-                            WavSlicer.send(peer, loop_name)
                             peer.waiting_ack.discard(loop_name)
                             logging.debug(f'new_loop {loop_name} acknowledged')
+                            if peer.get_receiving_status().get(loop_name, False):
+                                 print('Acking a loop thats been sent!')
+                            else:
+                                print('Sending first time ', peer.get_receiving_status())
+                                WavSlicer.send(peer, loop_name)
                         elif action  == 'new_loop':
                             message = msg['message']
                             loop_name = message['loop_name']
@@ -207,18 +213,21 @@ class PeerClient:
     def resend_missing_chunks(cls):
         while True:
             for peer in cls.outputs:
-                try:
-                    #FIXME Concurrent modification of status
-                    status = peer.get_receiving_status()
-                    for name, chunks in status.items():
-                        if chunks:
-                            for chunk in chunks:
-                                loop, loop_number = TTTruck._get_loop_by_name(name)
-                                logging.debug(f'resending {peer.get_address()}, {name}, {chunks}')
-                                WavSlicer.send(peer, loop.name, chunk_number=chunk)
-                    cls.send_ping(peer)
-                except Exception as e:
-                    print('Resending ', e)
+                if peer.is_ready:
+                    peer.is_ready = False
+                    try:
+                        #FIXME Concurrent modification of status
+                        status = peer.get_receiving_status()
+                        for name, chunks in status.items():
+                            if chunks:
+                                for chunk in chunks:
+                                    loop, loop_number = TTTruck._get_loop_by_name(name)
+                                    logging.debug(f'resending {peer.get_address()}, {name}, {chunks}')
+                                    WavSlicer.send(peer, loop.name, chunk_number=chunk)
+                            peer.clear_receiving_status(name)
+                    except Exception as e:
+                        print('Resending ', e)
+                cls.send_ping(peer)
             time.sleep(RESEND_PERIOD)
 
 
