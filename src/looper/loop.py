@@ -34,6 +34,7 @@ class Loop:
             self.sync_time = start + (diff / 2)
         else:
             SLClient.record()
+            self.cycle_length = SLClient.get_cycle_len()
 
 
     def overdub(self):
