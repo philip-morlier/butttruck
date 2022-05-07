@@ -13,6 +13,7 @@ PROCESS_INCOMING_PERIOD = 0.2
 PROCESS_LOOP_PERIOD = 5
 RESEND_PERIOD = 1
 
+
 class PeerClient:
     """Needs to create a standard 'ping' message which conforms to shared data structure"""
 
@@ -31,12 +32,13 @@ class PeerClient:
         peer.setblocking(True)
 
         if not server:
-           peer.bind(('0.0.0.0', addr[1]))
+            peer.bind(('0.0.0.0', addr[1]))
 
         cls.inputs.append(peer)
         cls.outputs.append(peer)
 
     count = 100
+
     @classmethod
     def run(cls):
         while cls.running:
@@ -52,8 +54,8 @@ class PeerClient:
                     cls.receive_data(peer)
                 time.sleep(0.01)
             except Exception as e:
-                logging.warning(f'Unable to communicate with peers', e)
-        logging.info(f'Shutting down peer service')
+                logging.warning('Unable to communicate with peers', e)
+        logging.info('Shutting down peer service')
 
     @classmethod
     def receive_data(cls, peer):
@@ -86,7 +88,7 @@ class PeerClient:
                 return
             peer.sendto(json.encode(), peer.get_address())
         except Exception as error:
-            logging.warning(f"Unable to send_msg", error)
+            logging.warning("Unable to send_msg", error)
 
     @staticmethod
     def send_ping(peer):
@@ -128,7 +130,7 @@ class PeerClient:
     def accept_loop_chunk(cls, peer, loop_name, current_chunk, chunk_body):
         try:
             if not peer.get_sending_status().get(loop_name, False):
-                logging.debug(f'Accepting chunk for completed loop. Ignoring')
+                logging.debug('Accepting chunk for completed loop. Ignoring')
                 return
             cls.loops[loop_name]['chunks'].pop(current_chunk)
             cls.loops[loop_name]['chunks'].insert(current_chunk, chunk_body.encode('latin1'))
@@ -155,11 +157,11 @@ class PeerClient:
                             peer.waiting_ack.discard(loop_name)
                             logging.debug(f'new_loop {loop_name} acknowledged')
                             if peer.get_receiving_status().get(loop_name, False):
-                                 print('Acking a loop thats been sent!')
+                                print('Acking a loop thats been sent!')
                             else:
                                 print('Sending first time ', peer.get_receiving_status())
                                 WavSlicer.send(peer, loop_name)
-                        elif action  == 'new_loop':
+                        elif action == 'new_loop':
                             message = msg['message']
                             loop_name = message['loop_name']
                             total = message['number_of_chunks']
@@ -187,7 +189,7 @@ class PeerClient:
                             if cls.loops.get(loop_name, None) is None:
                                 WavSlicer.send_request_new_loop_message(loop_name, peer)
                             else:
-                                #TODO: use this to determine if we've received a repeat or replace of loop
+                                # TODO: use this to determine if we've received a repeat or replace of loop
                                 cls.accept_loop_chunk(peer, loop_name, current_chunk, message['chunk_body'])
                                 logging.debug(f'Received chunk {current_chunk} from: {peer.get_address()}. ')
                         elif action == 'loop_modify':
@@ -200,16 +202,14 @@ class PeerClient:
                                     continue
 
                 except Exception as e:
-                    #logging.warning(f'Unable to receive data {msg} from: {peer.get_address()}', e)
-                    print('Incoming ', e)
-                    #import pdb;pdb.set_trace()
-            time.sleep(PROCESS_INCOMING_PERIOD)
+                    logging.warning(f'Unable to receive data {msg} from: {peer.get_address()}', e)
 
+            time.sleep(PROCESS_INCOMING_PERIOD)
 
     @classmethod
     def process_loop(cls, loop_name):
         logging.debug(f'Received complete loop {loop_name}')
-        #TODO: to pop or not to pop? Storing all wav_bytes is faster but consumes memory
+        # TODO: to pop or not to pop? Storing all wav_bytes is faster but consumes memory
         loop = cls.loops[loop_name]
         TTTruck.add_remote_loop(loop_name, loop)
 
@@ -235,8 +235,6 @@ class PeerClient:
                         print('Resending ', e)
                 cls.send_ping(peer)
             time.sleep(RESEND_PERIOD)
-
-
 
     @classmethod
     def exit(cls):

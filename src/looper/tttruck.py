@@ -1,7 +1,6 @@
 import logging
 import random
 import string
-import tempfile
 import time
 
 from src.looper.sl_client import SLClient
@@ -10,14 +9,13 @@ from src.udp.wav_slicer import WavSlicer
 
 
 class TTTruck:
-    #loop_dir = tempfile.mkdtemp()
     loop_index = {}
     global_changes = {}
     selected_loop_num = -1
 
     @classmethod
     def loop_record(cls):
-        loop = cls._get_loop().record()
+        cls._get_loop().record()
 
     @classmethod
     def loop_overdub(cls):
@@ -53,17 +51,15 @@ class TTTruck:
 
     @classmethod
     def publish_selected_changes(cls):
-        #loop = cls.loop_index.get(cls.selected_loop_num, None)
         loop = cls._get_loop()
         if loop is None:
-            logging.warning(f'Unable to publish changes. Loop doesnt exist')
+            logging.warning('Unable to publish changes. Loop doesnt exist')
             return
         if loop.changes:
             logging.debug(f'Sending changes {loop.changes} for {loop.name}')
             WavSlicer.send_changes(loop.changes, name=loop.name)
         else:
             logging.debug(f'{loop.name} has no changes to publish.')
-
 
     # @classmethod
     # def publish_global_changes(cls):
@@ -77,7 +73,7 @@ class TTTruck:
 
     @classmethod
     def set_sync_source(cls):
-        n =  cls.global_changes.get('sync_source', 0)
+        n = cls.global_changes.get('sync_source', 0)
         if n >= cls.get_number_of_loops():
             n = -3
         else:
@@ -142,7 +138,6 @@ class TTTruck:
         loop.set_sync_time(sync_time)
         loop.load_loop(loop_number)
 
-
     @classmethod
     def _get_loop_by_name(cls, loop_name):
         for idx, loop in cls.loop_index.items():
@@ -165,7 +160,6 @@ class TTTruck:
 
     @classmethod
     def select_next_loop(cls):
-#        selected = cls.get_selected_loop_num()
         num_loops = cls.get_number_of_loops()
         if cls.selected_loop_num < num_loops:
             cls.select_loop(cls.selected_loop_num + 1)
@@ -175,7 +169,7 @@ class TTTruck:
     @classmethod
     def select_prev_loop(cls):
         num_loops = cls.get_number_of_loops()
-        if cls.selected_loop_num >= 2 :
+        if cls.selected_loop_num >= 2:
             cls.select_loop(cls.selected_loop_num - 1)
         else:
             cls.select_loop(num_loops)
@@ -195,7 +189,7 @@ class TTTruck:
     @classmethod
     def _register_loop_updates(cls, loop):
         SLClient.register_auto_update('loop_pos', '/loop_pos', loop, interval=100)
-        #SLClient.register_auto_update('cycle_len', '/test', loop, interval=100)
+        # SLClient.register_auto_update('cycle_len', '/test', loop, interval=100)
         # SLClient.register_auto_update('free_time', '/test', interval=1, loop_number=cls.loops)
         SLClient.register_auto_update('total_time', '/test', loop)
         # SLClient.register_auto_update('waiting', '/test', interval=1, loop_number=cls.loops)
@@ -207,7 +201,7 @@ class TTTruck:
     @classmethod
     def _unregister_loop_updates(cls, loop):
         SLClient.unregister_auto_update('loop_pos', '/loop_pos', loop)
-        #SLClient.unregister_auto_update('cycle_len', '/test', loop)
+        # SLClient.unregister_auto_update('cycle_len', '/test', loop)
         # SLClient.register_auto_update('free_time', '/test', interval=1, loop_number=cls.loops)
         # SLClient.register_auto_update('total_time', '/test', interval=1, loop_number=cls.loops)
         # SLClient.register_auto_update('waiting', '/test', interval=1, loop_number=cls.loops)
@@ -215,7 +209,6 @@ class TTTruck:
         # SLClient.register_auto_update('next_state', '/test', interval=1, loop_number=cls.loops)
         SLClient.unregister_auto_update('save_loop', '/test', loop)
         SLClient.unregister_auto_update('load_loop', '/test', loop)
-
 
     @classmethod
     def _update_loop_index(cls, loop_number):
@@ -226,8 +219,8 @@ class TTTruck:
             elif loop_index <= loop_number:
                 updated[loop_index] = loop
             else:
-                raise Exception(
-                    f"loop index is broken! Index: {loop_index}, Name: {loop_name} , clsIndex: {cls.loop_index}")
+                raise Exception(f"loop index is broken! \
+                Index: {loop_index}, Name: {loop.name} , clsIndex: {cls.loop_index}")
         return updated
 
     @classmethod

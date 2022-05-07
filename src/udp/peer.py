@@ -1,6 +1,7 @@
 import socket
 import logging
 
+
 class Peer(socket.socket):
     def __init__(self, addr, x, y, server):
         super().__init__(x, y)
@@ -21,7 +22,7 @@ class Peer(socket.socket):
         self.receiving_status = status
 
     def update_receiving_status(self, state):
-        for k,v in state.items():
+        for k, v in state.items():
             self.receiving_status[k] = v
         self.is_ready = True
 

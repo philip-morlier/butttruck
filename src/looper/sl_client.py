@@ -7,6 +7,7 @@ from src.osc.osc_client import OSCClient
 return_url = 'localhost:9952'
 timeout = 0.2
 
+
 class SLClient:
 
     loops = -1

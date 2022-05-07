@@ -8,6 +8,7 @@ from src.udp.messages import send_queue
 
 LIMIT = 1024
 
+
 class WavSlicer:
     published_loops = {}
 
@@ -24,12 +25,12 @@ class WavSlicer:
     @staticmethod
     def slice(loop, chunk_number=None, peer=None):
         if loop is None:
-            logging.warning(f'Unable to slice loop')
+            logging.warning('Unable to slice loop')
             # TODO: inform peer we no longer have file
             return
 
         try:
-            #FIXME
+            # FIXME
             WavSlicer.published_loops[loop.name] = []
             with open(loop.wav_file, 'rb') as f:
                 while f.peek(LIMIT):
@@ -46,7 +47,7 @@ class WavSlicer:
 
     @staticmethod
     def send_new_loop_message(loop, peer=None):
-        #TODO: only calculate the number_of_chunks if we havent done so for this loop
+        # TODO: only calculate the number_of_chunks if we havent done so for this loop
         size_in_bytes = os.path.getsize(loop.wav_file)
         number_of_chunks = math.ceil(size_in_bytes / LIMIT)
 
@@ -67,7 +68,6 @@ class WavSlicer:
                           'message': {'loop_name': name}})
         logging.debug(f'Request new_loop info from {peer.get_address()} for {name}')
         peer.sendto(msg.encode(), peer.get_address())
-
 
     @staticmethod
     def format_and_send_wav_message(peer, name, chunk_number, chunk=None):

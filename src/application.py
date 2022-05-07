@@ -8,7 +8,6 @@ from src.osc.osc_client import OSCClient
 from src.osc.osc_server import OSCServer
 from src.udp.peers import PeerClient
 import src.looper.midi as midi
-from src.udp.wav_slicer import WavSlicer
 
 
 class BuTTTruck:

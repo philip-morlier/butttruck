@@ -1,9 +1,7 @@
 import tempfile
-import time
-import logging
 
 from src.looper.sl_client import SLClient
-#from src.udp.wav_slicer import WavSlicer
+
 
 class Loop:
     loop_dir = tempfile.mkdtemp()
