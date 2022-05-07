@@ -57,12 +57,15 @@ class PeerClient:
 
     @classmethod
     def receive_data(cls, peer):
-        data, port = peer.recvfrom(8192)
-        data = json.loads(data)
-        if peer.is_server():
-            cls.update_peers(data)
-        else:
-            receive_queue.append((data, peer))
+        try:
+            data, port = peer.recvfrom(8192)
+            data = json.loads(data)
+            if peer.is_server():
+                cls.update_peers(data)
+            else:
+                receive_queue.append((data, peer))
+        except Exception as e:
+            print('Error receiving data ', e)
 
     @classmethod
     def update_peers(cls, data):
@@ -106,8 +109,8 @@ class PeerClient:
                             state[k] = v[:100]
                             logging.debug(f'Pinging {peer.get_address()} with: {state[k]}. Current state is: {status}')
                             break
-                        message = json.dumps({'action': 'ping', 'message': {}, 'state': state})
-                        peer.sendto(message.encode(), peer.get_address())
+                    message = json.dumps({'action': 'ping', 'message': {}, 'state': state})
+                    peer.sendto(message.encode(), peer.get_address())
                 else:
                     message = json.dumps({'action': 'ping', 'message': {}, 'state': {}})
                     logging.debug(f'Pinging {peer.get_address()}. Current state is: {status}')

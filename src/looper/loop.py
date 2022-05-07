@@ -62,10 +62,7 @@ class Loop:
         SLClient.set_quantize(0) if SLClient.quantize_on == 3.0 else SLClient.set_quantize(SLClient.quantize_on + 1)
     def load_loop(self, loop_number):
         SLClient.load_loop(self.wav_file, loop_number)
-        #TODO: Schedule playback
-        if self.state != SLClient.states[14]:
-            SLClient.pause()
-        x = SLClient.get_cycle_len()
+        SLClient.get_cycle_len(loop_number)
 
         # t = point in my loop0 I began
         # x = decimal of my cycle_length
@@ -81,7 +78,7 @@ class Loop:
         else:
             p = y + (1 + self.sync_time) - z
         #p = y + (x + (1 - t))
-        SLClient.scheduled_tasks.enter(p, 1, SLClient.pause(loop_number))
+        SLClient.scheduled_tasks.enter(p, 1, SLClient.trigger(loop_number))
 
 
     def _update_changes(self, parameter, value=None):
