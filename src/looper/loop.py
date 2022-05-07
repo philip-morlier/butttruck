@@ -63,7 +63,7 @@ class Loop:
     def load_loop(self, loop_number):
         SLClient.load_loop(self.wav_file, loop_number)
         #TODO: Schedule playback
-        if self.state == 4:
+        if self.state != SLClient.states[14]:
             SLClient.pause()
         x = SLClient.get_cycle_len()
 
@@ -86,7 +86,7 @@ class Loop:
 
     def _update_changes(self, parameter, value=None):
         if self.changes.get(parameter, None) is None:
-            self.changes[parameter] = 1 if value == None else value
+            self.changes[parameter] = 1 if value is None else value
         else:
             if value is None:
                 self.changes[parameter] = 0 if self.changes[parameter] == 1 else 1

@@ -4,8 +4,7 @@ import os
 import json
 import time
 
-from src.udp.messages import send_queue, receive_queue
-from src.udp.peer import Peer
+from src.udp.messages import send_queue
 
 LIMIT = 1024
 
