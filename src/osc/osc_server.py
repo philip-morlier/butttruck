@@ -28,12 +28,13 @@ class OSCServer:
         osc_method('/test', cls.test_handler)
 
         osc_method('/loop_pos', cls.loop_pos_handler)
+        osc_method('/main_loop_pos', cls.main_loop_pos_handler)
         osc_method('/state', cls.state_handler)
         #osc_method('/loops', cls.test_handler)
 
         osc_method('/parameter/*', cls.parameter_handler)
-        osc_method('/save_loop_error', cls.loop_save_handler)
-        osc_method('/load_loop_error', cls._loop_save_handler)
+        osc_method('/save_loop_error', cls._loop_save_handler)
+        osc_method('/load_loop_error', cls._loop_load_handler)
 
     @staticmethod
     def register_handler(address, function):
@@ -42,12 +43,15 @@ class OSCServer:
 
     @classmethod
     def cycle_len_handler(cls, x, y, z):
+        print(x, y, z)
+        TTTruck._get_loop().set_cycle_len(z)
         SLClient.cycle_len = z
 
     @classmethod
     def selected_loop_handler(cls, x, y, z):
         logging.debug(f'Selection handler selecting: {z} ')
         SLClient.selected_loop = int(z)
+        TTTruck.selected_loop_num = int(z)
         SLClient.selection_evt.set()
         SLClient.selection_evt.clear()
 
@@ -55,6 +59,9 @@ class OSCServer:
     def loop_pos_handler(cls, x, y, z):
         SLClient.loop_pos = z
 
+    @classmethod
+    def main_loop_pos_handler(cls, x, y, z):
+        SLClient.main_loop_pos = z
 
     @classmethod
     def test_handler(cls, x, y, z):
@@ -68,15 +75,17 @@ class OSCServer:
     @staticmethod
     def parameter_handler(loop, param, value):
         logging.debug(f'Parameter handler: Loop {loop} parameter {param} is {value}')
-        name = TTTruck.loop_index[loop]
-        TTTruck.changes[name][param] = value
+        # FIXME handle keyerror
+        loop = TTTruck._get_loop()
+        loop.changes[param] = value
         SLClient.parameter_evt.set()
         logging.debug(f'Loop change: {TTTruck.changes}')
         SLClient.parameter_evt.clear()
 
     @staticmethod
     def state_handler(loop, param, value):
-        SLClient.state = SLClient.states[int(value)]
+        TTTruck._get_loop_by_idx(loop).state = SLClient.states[int(value)]
+        logging.debug(f'Loop state change: {loop}, {value}')
         SLClient.state_change.set()
         SLClient.state_change.clear()
 
@@ -95,6 +104,12 @@ class OSCServer:
 
     @staticmethod
     def _loop_save_handler(x, y, z):
+        print(x,y,z)
+        logging.warning(f'Loop save error: {x} {y} {z}')
+
+    @staticmethod
+    def _loop_load_handler(x, y, z):
+        print(x,y,z)
         logging.warning(f'Loop load error: {x} {y} {z}')
 
     @classmethod

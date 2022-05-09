@@ -1,34 +1,43 @@
 import socketserver
 import random
-import pickle
-
+import json
 import stun as stun
 
 
 class BuTTTruckHandler(socketserver.DatagramRequestHandler):
     peers = {}
+    local = None
 
     def handle(self):
         """Return a dict of {peer_ip : port} for all peers"""
         data = self.rfile.read()
         requester = self.client_address[0]
+
         if requester == '127.0.0.1':
-            _, requester, _ = stun.get_ip_info()
-        requesters_peers = self.peers.get(requester, None)
+            if BuTTTruckHandler.local is None:
+                try:
+                    _, requester, _ = stun.get_ip_info()
+                    BuTTTruckHandler.local = requester
+                except Exception:
+                    self.wfile.write(b'')
+                    return
+            else:
+                requester = BuTTTruckHandler.local
+
+        requesters_peers = BuTTTruckHandler.peers.get(requester, None)
+
         if requesters_peers is None:
             requesters_peers = {}
-            self.peers[requester] = requesters_peers
+            BuTTTruckHandler.peers[requester] = requesters_peers
 
         # Get a list of all peers that does not include the requester
         all_peers = dict(filter(lambda peer: peer[0] != requester, self.peers.items()))
 
         # Update the requesters peers if there are more peers available
         if all_peers != requesters_peers:
-            print(self.peers)
             self._update_peers(requester, all_peers, requesters_peers)
 
-        # TODO: use json rather than pickle
-        response = pickle.dumps(self.peers[requester])
+        response = bytes(json.dumps(BuTTTruckHandler.peers[requester]), 'utf8')
         self.wfile.write(response)
 
     # TODO: this assumes that current_peers is always < all_peers.
@@ -38,8 +47,8 @@ class BuTTTruckHandler(socketserver.DatagramRequestHandler):
         missing_peers = list(filter(lambda item: item not in requesters_peers, all_peers))
         for peer in missing_peers:
             port_number = self._port_number(requester, peer)
-            self.peers[requester][peer] = port_number
-            self.peers[peer][requester] = port_number
+            BuTTTruckHandler.peers[requester][peer] = port_number
+            BuTTTruckHandler.peers[peer][requester] = port_number
 
     def _port_number(self, requester, peer):
         # Get a port number not already in use by the requester or their peer
